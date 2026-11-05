@@ -1,0 +1,124 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Data Plane: Gorąca ścieżka pakietowa (UDP / RTP / SRTP)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": { "unit": "pps" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "title": "Przepustowość pakietowa (probe_packets_total)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (kind) (rate(probe_packets_total[5s]))",
+          "legendFormat": "{{kind}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": { "unit": "µs" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+      "id": 2,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "title": "Jitter między-pakietowy P95 (histogram)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(probe_interarrival_jitter_us_bucket[10s])))",
+          "legendFormat": "p95 Jitter"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }, "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 4, "x": 16, "y": 1 },
+      "id": 3,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Zgubione pakiety (NACK)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(increase(probe_rtp_packets_lost_total[1m]))",
+          "legendFormat": "Straty (1m)"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }, "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 4, "x": 20, "y": 1 },
+      "id": 4,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Błędy HMAC SRTP",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(increase(probe_srtp_auth_failures_total[1m]))",
+          "legendFormat": "Odrzucone SRTP"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 101,
+      "title": "Runtime Tokio & Płaszczyzna Sterowania (Control Plane)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 10 },
+      "id": 5,
+      "title": "Tokio Worker Steal Count (kradzieże zadań)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "tokio_worker_steal_count",
+          "legendFormat": "Worker #{{worker}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 10 },
+      "id": 6,
+      "title": "Głębokość kolejek lokalnych Tokio",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "tokio_worker_local_queue_depth",
+          "legendFormat": "Kolejka Worker #{{worker}}"
+        }
+      ]
+    }
+  ],
+  "refresh": "1s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["rust", "edge-media-probe", "workshop"],
+  "time": { "from": "now-5m", "to": "now" },
+  "timepicker": { "refresh_intervals": ["1s", "5s", "10s"] },
+  "timezone": "browser",
+  "title": "Edge Media Probe & Relay Dashboard",
+  "uid": "edge-probe-main",
+  "version": 1
+}
+
