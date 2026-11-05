@@ -4,3 +4,38 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1"
+thiserror = "2"
+bytes = "1.11"
+hex = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1.43", features = ["full", "tracing"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+axum = "0.8"
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite"] }
+socket2 = { version = "0.5", features = ["all"] }
+netdev = "0.31"
+if-addrs = "0.14"
+webrtc-srtp = "0.13"
+pcap = "2.2"
+pnet = "0.35"
+etherparse = "0.17"
+zerocopy = { version = "0.8", features = ["derive"] }
+metrics = "0.24"
+metrics-exporter-prometheus = "0.16"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-appender = "0.2"
+console-subscriber = "0.4"
+libc = "0.2"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+tokio-uring = "0.5"
+
+[dev-dependencies]
+turmoil = "0.6"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tokio_unstable)'] }
+async_fn_in_trait = "allow"
