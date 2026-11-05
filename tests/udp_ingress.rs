@@ -39,3 +39,40 @@ async fn test_udp_peek_demux_and_zero_copy_reclaim() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[test]
+fn test_compatibility_with_webrtc_rs_rtp_packet() -> anyhow::Result<()> {
+    use rtp::header::Header;
+    use rtp::packet::Packet;
+    use webrtc_util::marshal::Marshal;
+
+    // Pakiet wygenerowany przez oficjalną kratkę webrtc-rs/rtp
+    let webrtc_packet = Packet {
+        header: Header {
+            version: 2,
+            payload_type: 96,
+            sequence_number: 1234,
+            timestamp: 90_000,
+            ssrc: 0xCAFE_BABE,
+            marker: true,
+            ..Default::default()
+        },
+        payload: bytes::Bytes::from_static(b"WEBRTC_RS_COMPATIBILITY_FRAME"),
+    };
+
+    let raw = webrtc_packet.marshal()?;
+
+    // Parsowanie przez nasz bezalokacyjny parser kursora bytes::Buf z Zadania 3.1
+    let (parsed_hdr, parsed_payload) = parse_rtp_header(raw)?;
+
+    assert_eq!(parsed_hdr.version, 2);
+    assert_eq!(parsed_hdr.sequence_number, 1234);
+    assert_eq!(parsed_hdr.timestamp, 90_000);
+    assert_eq!(parsed_hdr.ssrc, 0xCAFE_BABE);
+    assert_eq!(parsed_hdr.payload_type, 96);
+    assert!(parsed_hdr.marker);
+    assert_eq!(&parsed_payload[..], b"WEBRTC_RS_COMPATIBILITY_FRAME");
+
+    Ok(())
+}
+
+

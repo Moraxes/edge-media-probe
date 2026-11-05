@@ -17,7 +17,9 @@ sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite"] }
 socket2 = { version = "0.5", features = ["all"] }
 netdev = "0.31"
 if-addrs = "0.14"
-webrtc-srtp = "0.13"
+webrtc-srtp = "0.17"
+rtp = "0.17"
+webrtc-util = "0.17"
 pcap = "2.2"
 pnet = "0.35"
 etherparse = "0.17"
