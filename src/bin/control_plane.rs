@@ -1,11 +1,14 @@
 use edge_media_probe::control_plane::{create_control_plane_router, AppState};
-use edge_media_probe::observability::spawn_runtime_metrics_collector;
+use edge_media_probe::observability::{init_tracing, spawn_runtime_metrics_collector};
 use metrics_exporter_prometheus::PrometheusBuilder;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    // Inicjalizacja nieblokującego potoku telemetrii (tracing + opcjonalnie Tokio Console)
+    let _guard = init_tracing("control_plane");
+
     // Inicjalizacja subskrybenta metryk Prometheusa
     let recorder = PrometheusBuilder::new().install_recorder()?;
     spawn_runtime_metrics_collector();

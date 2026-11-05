@@ -38,12 +38,19 @@ impl IntoResponse for ApiError {
 }
 
 /// Endpoint KMS: GET /v1/keys/{ssrc}
+#[tracing::instrument(
+    name = "control_plane.get_kms_keys",
+    fields(ssrc_hex = %ssrc_hex, ssrc_val = tracing::field::Empty)
+)]
 pub async fn handle_get_kms_keys(
     Path(ssrc_hex): Path<String>,
 ) -> Result<Json<crate::kms_client::KmsKeyResponse>, ApiError> {
     let ssrc_trimmed = ssrc_hex.trim_start_matches("0x").trim_start_matches("0X");
     let ssrc_val = u32::from_str_radix(ssrc_trimmed, 16)
         .map_err(|_| ApiError::InvalidSsrc(format!("Niepoprawna wartość hex: {ssrc_hex}")))?;
+
+    tracing::Span::current().record("ssrc_val", ssrc_val);
+    tracing::info!(ssrc = %format!("{ssrc_val:#010x}"), "Wygenerowano materiał klucza SRTP dla strumienia");
 
     // Deterministyczny materiał klucza SRTP dla podanego SSRC (AES-128 + sól)
     let key_bytes: Vec<u8> = (0..16).map(|i| ((ssrc_val >> ((i % 4) * 8)) & 0xFF) as u8 ^ i).collect();
@@ -57,10 +64,24 @@ pub async fn handle_get_kms_keys(
 }
 
 /// Endpoint Webhooka SLA: POST /v1/alerts
+#[tracing::instrument(
+    name = "control_plane.post_sla_alert",
+    skip(state, payload),
+    fields(
+        ssrc = %format!("{:#010x}", payload.ssrc),
+        probe_id = %payload.probe_id,
+        fraction_lost = payload.fraction_lost
+    )
+)]
 pub async fn handle_post_sla_alert(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<crate::kms_client::SlaAlertPayload>,
 ) -> Result<StatusCode, ApiError> {
+    tracing::warn!(
+        reason = %payload.reason,
+        "Odebrano alert jakościowy SLA od sondy brzegowej"
+    );
+
     let mut tx = state.db.begin().await?;
 
     sqlx::query(
@@ -73,6 +94,7 @@ pub async fn handle_post_sla_alert(
     .await?;
 
     tx.commit().await?;
+    tracing::info!("Zapisano alert SLA w transakcji SQLite");
     Ok(StatusCode::CREATED)
 }
 

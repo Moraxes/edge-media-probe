@@ -2,12 +2,74 @@
 //!
 //! Ćwiczenie obejmuje:
 //! - Zadanie 2.1: Diagnostykę egzekutora Tokio w `tokio-console`,
-//! - Zadanie 2.2: Ustrukturyzowane logowanie JSON i zdarzenia anomalii (`record_rtp_gap_event`),
+//! - Zadanie 2.2: Ustrukturyzowane logowanie JSON i zdarzenia anomalii (`init_tracing`, `record_rtp_gap_event`),
 //! - Zadanie 2.3: Atomowe metryki Prometheusa (`ProbeDataplaneMetrics`) i strażnika RAII `Drop` (`ActiveResourceGuard`).
 
 use metrics::{counter, gauge, histogram};
 use std::time::Duration;
 use tracing::warn;
+use tracing_subscriber::{
+    fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer, Registry,
+};
+
+/// Inicjalizuje wielowarstwowy potok telemetrii (`tracing` + opcjonalnie `tokio-console`).
+///
+/// Zwraca strażnika `WorkerGuard`, który musi pozostać na stosie `main()`
+/// aż do zakończenia programu, aby zapewnić bezblokujące opróżnienie buforów (`flush`).
+///
+/// Obsługuje:
+/// - Zmienną środowiskową `LOG_FORMAT=json` do emisji zdarzeń w standardzie Cloud-Native JSON,
+/// - Filtr poziomów logowania `RUST_LOG` przez `EnvFilter`,
+/// - Diagnostykę `tokio-console` przy kompilacji z `--cfg tokio_unstable`.
+pub fn init_tracing(
+    service_name: &'static str,
+) -> Option<tracing_appender::non_blocking::WorkerGuard> {
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info,edge_media_probe=debug"));
+
+    // Nieblokujący writer (tracing-appender) na stdout zapobiega blokowaniu wątków roboczych Tokio:
+    let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stdout());
+
+    let is_json = std::env::var("LOG_FORMAT")
+        .map(|v| v.eq_ignore_ascii_case("json"))
+        .unwrap_or(false);
+
+    let fmt_layer = if is_json {
+        fmt::layer()
+            .json()
+            .with_current_span(true)
+            .with_span_list(true)
+            .with_writer(non_blocking)
+            .boxed()
+    } else {
+        fmt::layer()
+            .with_target(true)
+            .with_thread_ids(true)
+            .with_writer(non_blocking)
+            .boxed()
+    };
+
+    #[cfg(tokio_unstable)]
+    let console_layer = Some(console_subscriber::spawn());
+    #[cfg(not(tokio_unstable))]
+    let console_layer = None::<Box<dyn Layer<Registry> + Send + Sync>>;
+
+    let subscriber = Registry::default()
+        .with(env_filter)
+        .with(fmt_layer)
+        .with(console_layer);
+
+    let _ = subscriber.try_init();
+
+    tracing::info!(
+        service = service_name,
+        json_format = is_json,
+        tokio_unstable = cfg!(tokio_unstable),
+        "Zainicjalizowano podsystem tracingu i telemetrii ustrukturyzowanej"
+    );
+
+    Some(guard)
+}
 
 /// Strażnik RAII gwarantujący Cancellation Safety dla metryk zasobów w locie
 pub struct ActiveResourceGuard {
@@ -51,9 +113,12 @@ impl ProbeDataplaneMetrics {
 }
 
 /// Zimna ścieżka telemetrii: rejestrowanie rzadkich anomalii w drzewie spanów
+#[tracing::instrument(
+    name = "rtp.anomaly",
+    fields(ssrc = %format!("{ssrc:#010x}"), roc)
+)]
 pub fn record_rtp_gap_event(ssrc: u32, missing_seqs: &[u16], roc: u32) {
     warn!(
-        ssrc = %format!("{ssrc:#010x}"),
         roc,
         missing_count = missing_seqs.len(),
         ?missing_seqs,

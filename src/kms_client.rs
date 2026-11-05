@@ -8,6 +8,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::time::Duration;
+use tracing::{info, warn, Span};
 
 #[derive(Clone)]
 pub struct SrtpKeyMaterial {
@@ -72,16 +73,34 @@ impl KmsClient {
     }
 
     /// Pobiera materiał klucza SRTP dla strumienia o zadanym SSRC
+    #[tracing::instrument(
+        name = "kms.fetch_srtp_keys",
+        skip(self),
+        fields(
+            ssrc = %format!("{ssrc:#010x}"),
+            correlation_id = tracing::field::Empty,
+            http.status = tracing::field::Empty
+        )
+    )]
     pub async fn fetch_srtp_keys(&self, ssrc: u32) -> Result<SrtpKeyMaterial, KmsError> {
+        let correlation_id = format!("probe-req-{ssrc:08x}");
+        Span::current().record("correlation_id", &correlation_id);
+
         let url = format!("{}/v1/keys/{:#010x}", self.base_url, ssrc);
+        info!(url = %url, "Wysyłanie zapytania KMS o materiał klucza SRTP");
+
         let resp = self
             .client
             .get(&url)
+            .header("X-Correlation-ID", &correlation_id)
             .header("Accept", "application/json")
             .send()
             .await?;
 
+        Span::current().record("http.status", resp.status().as_u16());
+
         if !resp.status().is_success() {
+            warn!(status = %resp.status(), "Serwer KMS zwrócił błąd HTTP");
             return Err(KmsError::ServerError(resp.status()));
         }
 
@@ -108,6 +127,8 @@ impl KmsClient {
         master_key.copy_from_slice(&key_bytes);
         master_salt.copy_from_slice(&salt_bytes);
 
+        info!("Pomyślnie pobrano i zweryfikowano materiał kryptograficzny SRTP");
+
         Ok(SrtpKeyMaterial {
             ssrc: body.ssrc,
             master_key,
@@ -116,8 +137,20 @@ impl KmsClient {
     }
 
     /// Wysyła powiadomienie o naruszeniu SLA lub anomalii jakości strumienia
+    #[tracing::instrument(
+        name = "control_plane.send_sla_alert",
+        skip(self, alert),
+        fields(
+            ssrc = %format!("{:#010x}", alert.ssrc),
+            probe_id = %alert.probe_id,
+            fraction_lost = alert.fraction_lost,
+            http.status = tracing::field::Empty
+        )
+    )]
     pub async fn send_sla_alert(&self, alert: &SlaAlertPayload) -> Result<(), KmsError> {
         let url = format!("{}/v1/alerts", self.base_url);
+        info!(reason = %alert.reason, "Wysyłanie alertu SLA do Control Plane");
+
         let resp = self
             .client
             .post(&url)
@@ -126,9 +159,14 @@ impl KmsClient {
             .send()
             .await?;
 
+        Span::current().record("http.status", resp.status().as_u16());
+
         if !resp.status().is_success() {
+            warn!(status = %resp.status(), "Błąd wysyłania alertu SLA do Control Plane");
             return Err(KmsError::ServerError(resp.status()));
         }
+
+        info!("Alert SLA został przyjęty przez Control Plane");
         Ok(())
     }
 }

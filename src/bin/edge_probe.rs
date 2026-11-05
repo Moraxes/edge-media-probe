@@ -1,5 +1,5 @@
 use bytes::BytesMut;
-use edge_media_probe::observability::ProbeDataplaneMetrics;
+use edge_media_probe::observability::{init_tracing, ProbeDataplaneMetrics};
 use edge_media_probe::pcap_sink::PortableUringStyleSink;
 use edge_media_probe::pipeline::process_srtp_datagram_with_observability_and_uring;
 use edge_media_probe::rtp_session::SansIoRtpSession;
@@ -11,6 +11,8 @@ use std::time::{Duration, Instant};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    // Inicjalizacja nieblokującego potoku telemetrii (tracing + opcjonalnie Tokio Console)
+    let _guard = init_tracing("edge_probe");
     let args: Vec<String> = env::args().collect();
     let listen_addr: SocketAddr = args
         .iter()
