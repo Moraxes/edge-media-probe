@@ -1,31 +1,35 @@
 use bytes::BytesMut;
+use clap::Parser;
 use edge_media_probe::observability::{init_tracing, ProbeDataplaneMetrics};
 use edge_media_probe::pcap_sink::PortableUringStyleSink;
 use edge_media_probe::pipeline::process_srtp_datagram_with_observability_and_uring;
 use edge_media_probe::rtp_session::SansIoRtpSession;
 use edge_media_probe::srtp_layer::create_srtp_pair;
 use edge_media_probe::udp_ingress::bind_tuned_udp;
-use std::env;
 use std::net::SocketAddr;
 use std::time::{Duration, Instant};
 
+/// Główny węzeł sieciowy Edge Media Probe (sonda i przekaźnik RTP/SRTP)
+#[derive(Parser, Debug)]
+#[command(name = "edge_probe", version, about = "Główny węzeł sieciowy Edge Media Probe (sonda i przekaźnik RTP/SRTP)")]
+struct Args {
+    /// Adres nasłuchu UDP dla strumienia RTP/SRTP
+    #[arg(short, long, default_value = "127.0.0.1:5004")]
+    listen: SocketAddr,
+
+    /// Opcjonalny adres docelowy UDP do przekazywania odszyfrowanych pakietów RTP
+    #[arg(short, long)]
+    forward: Option<SocketAddr>,
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    let args = Args::parse();
+
     // Inicjalizacja nieblokującego potoku telemetrii (tracing + opcjonalnie Tokio Console)
     let _guard = init_tracing("edge_probe");
-    let args: Vec<String> = env::args().collect();
-    let listen_addr: SocketAddr = args
-        .iter()
-        .position(|a| a == "--listen")
-        .and_then(|i| args.get(i + 1))
-        .unwrap_or(&"127.0.0.1:5004".to_string())
-        .parse()?;
-
-    let forward_addr: Option<SocketAddr> = args
-        .iter()
-        .position(|a| a == "--forward")
-        .and_then(|i| args.get(i + 1))
-        .and_then(|s| s.parse().ok());
+    let listen_addr = args.listen;
+    let forward_addr = args.forward;
 
     println!("⚡ [Edge Media Probe] Start węzła sieciowego:");
     println!("   • Nasłuch UDP:    {listen_addr}");

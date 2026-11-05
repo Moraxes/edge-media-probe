@@ -52,7 +52,7 @@ pub fn init_tracing(
     #[cfg(tokio_unstable)]
     let console_layer = Some(console_subscriber::spawn());
     #[cfg(not(tokio_unstable))]
-    let console_layer = None::<Box<dyn Layer<Registry> + Send + Sync>>;
+    let console_layer: Option<console_subscriber::ConsoleLayer> = None;
 
     let subscriber = Registry::default()
         .with(env_filter)
