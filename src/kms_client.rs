@@ -64,6 +64,7 @@ impl KmsClient {
     pub fn new(base_url: String) -> Result<Self, reqwest::Error> {
         let client = reqwest::Client::builder()
             .use_rustls_tls()
+            .no_proxy()
             .timeout(Duration::from_secs(5))
             .pool_idle_timeout(Duration::from_secs(90))
             .tcp_nodelay(true)

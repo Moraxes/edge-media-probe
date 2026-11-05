@@ -50,7 +50,32 @@ pub fn init_tracing(
     };
 
     #[cfg(tokio_unstable)]
-    let console_layer = Some(console_subscriber::spawn());
+    let console_layer = {
+        let (layer, server) = console_subscriber::ConsoleLayer::builder()
+            .with_default_env()
+            .build();
+
+        std::thread::Builder::new()
+            .name("console_subscriber".into())
+            .spawn(move || {
+                let runtime = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build();
+                if let Ok(runtime) = runtime {
+                    runtime.block_on(async move {
+                        if let Err(err) = server.serve().await {
+                            tracing::warn!(
+                                %err,
+                                "Nie udało się uruchomić serwera gRPC tokio-console (np. port zajęty przez inną binarkę). Aby monitorować tę binarkę, ustaw TOKIO_CONSOLE_BIND=127.0.0.1:<inny_port>"
+                            );
+                        }
+                    });
+                }
+            })
+            .ok();
+
+        Some(layer)
+    };
     #[cfg(not(tokio_unstable))]
     let console_layer: Option<console_subscriber::ConsoleLayer> = None;
 
@@ -110,6 +135,14 @@ impl ProbeDataplaneMetrics {
     pub fn on_srtp_auth_error() {
         counter!("probe_srtp_auth_failures_total").increment(1);
     }
+
+    #[inline]
+    pub fn on_rtcp_receiver_report(lost_packets: u32, extended_highest_seq: u32) {
+        if extended_highest_seq > 0 {
+            let ratio = (lost_packets as f64) / (extended_highest_seq as f64);
+            gauge!("probe_rtp_loss_ratio").set((ratio * 100.0).clamp(0.0, 100.0));
+        }
+    }
 }
 
 /// Zimna ścieżka telemetrii: rejestrowanie rzadkich anomalii w drzewie spanów
@@ -126,11 +159,11 @@ pub fn record_rtp_gap_event(ssrc: u32, missing_seqs: &[u16], roc: u32) {
     );
 }
 
-/// Cykliczny kolektor metryk egzekutora Tokio
+/// Cykliczny kolektor metryk egzekutora Tokio (co 1s, dopasowane do interwału scrapowania Prometheusa)
 pub fn spawn_runtime_metrics_collector() {
     tokio::spawn(async move {
         let handle = tokio::runtime::Handle::current();
-        let mut interval = tokio::time::interval(Duration::from_secs(5));
+        let mut interval = tokio::time::interval(Duration::from_secs(1));
         loop {
             interval.tick().await;
             let rt_metrics = handle.metrics();

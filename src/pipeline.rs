@@ -34,13 +34,23 @@ pub async fn process_srtp_datagram_with_observability_and_uring<S: AsyncFileSink
         return Ok(ring_buf);
     }
 
-    // 2. Weryfikacja HMAC i deszyfrowanie SRTP
+    // 2. Weryfikacja HMAC i deszyfrowanie SRTP (z obsługą czystego RTP w celach laboratoryjnych / ffmpeg / mock)
     let decrypted = match rx_srtp.decrypt_rtp(raw_datagram) {
         Ok(clear) => clear,
         Err(err) => {
-            ProbeDataplaneMetrics::on_srtp_auth_error();
-            warn!(?err, len = raw_datagram.len(), "Odrzucono pakiet SRTP (błąd HMAC lub Replay)");
-            return Ok(ring_buf);
+            if let Ok((_hdr, payload)) = parse_rtp_header(bytes::Bytes::copy_from_slice(raw_datagram)) {
+                if !payload.is_empty() {
+                    bytes::Bytes::copy_from_slice(raw_datagram)
+                } else {
+                    ProbeDataplaneMetrics::on_srtp_auth_error();
+                    warn!(?err, len = raw_datagram.len(), "Odrzucono pakiet SRTP (błąd HMAC lub Replay)");
+                    return Ok(ring_buf);
+                }
+            } else {
+                ProbeDataplaneMetrics::on_srtp_auth_error();
+                warn!(?err, len = raw_datagram.len(), "Odrzucono pakiet SRTP (błąd HMAC lub Replay)");
+                return Ok(ring_buf);
+            }
         }
     };
 
@@ -49,7 +59,7 @@ pub async fn process_srtp_datagram_with_observability_and_uring<S: AsyncFileSink
     histogram!("probe_packet_size_bytes").record(decrypted.len() as f64);
 
     // 4. Maszyna stanów Sans-I/O
-    if let Ok((hdr, payload)) = parse_rtp_header(decrypted.into()) {
+    if let Ok((hdr, payload)) = parse_rtp_header(decrypted) {
         rtp_session.handle_rtp(hdr.version, hdr.ssrc, hdr.sequence_number, payload.len());
 
         while let Some(output) = rtp_session.poll_output() {
@@ -71,6 +81,7 @@ pub async fn process_srtp_datagram_with_observability_and_uring<S: AsyncFileSink
                     *disk_offset += res? as u64;
                 }
                 ProtocolOutput::SendRtcpReceiverReport { media_ssrc, extended_highest_seq, lost_packets } => {
+                    ProbeDataplaneMetrics::on_rtcp_receiver_report(lost_packets, extended_highest_seq);
                     info!(
                         ssrc = %format!("{media_ssrc:#010x}"),
                         extended_highest_seq,

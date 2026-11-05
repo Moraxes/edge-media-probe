@@ -34,7 +34,7 @@ pub fn bind_tuned_udp(addr: SocketAddr, rcv_buf_bytes: usize) -> std::io::Result
     let _ = socket.set_recv_buffer_size(rcv_buf_bytes);
     socket.set_nonblocking(true)?;
     socket.bind(&addr.into())?;
-    Ok(UdpSocket::from_std(socket.into())?)
+    UdpSocket::from_std(socket.into())
 }
 
 pub fn classify_peeked_packet(peek_buf: &[u8]) -> Option<PacketClass> {

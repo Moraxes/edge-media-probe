@@ -6,9 +6,12 @@ scrape_configs:
   - job_name: "edge-media-probe"
     metrics_path: "/metrics"
     static_configs:
-      # host.docker.internal pozwala kontenerowi sięgnąć do serwera Axum działającego na maszynie hosta (port 3000)
       - targets: ["host.docker.internal:3000"]
         labels:
           app: "edge-media-probe"
-          environment: "workshop"
+          service: "control_plane"
+      - targets: ["host.docker.internal:3002"]
+        labels:
+          app: "edge-media-probe"
+          service: "edge_probe"
 

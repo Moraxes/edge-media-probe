@@ -34,7 +34,7 @@ fn test_turmoil_partition_triggers_rtcp_nack() -> turmoil::Result {
         for _ in 0..2 {
             let (n, src) = sock.recv_from(&mut buf).await?;
             let clear = rx_srtp.decrypt_rtp(&buf[..n]).expect("Weryfikacja SRTP HMAC");
-            let (hdr, payload) = parse_rtp_header(clear.into()).unwrap();
+            let (hdr, payload) = parse_rtp_header(clear).unwrap();
             session.handle_rtp(hdr.version, hdr.ssrc, hdr.sequence_number, payload.len());
 
             while let Some(out) = session.poll_output() {

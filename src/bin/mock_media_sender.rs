@@ -41,14 +41,14 @@ fn main() -> anyhow::Result<()> {
 
     loop {
         // Celowo gubimy pakiety o numerze podzielnym przez drop_every, aby przetestować NACK w sondzie!
-        if args.drop_every == 0 || seq % args.drop_every != 0 {
+        if args.drop_every == 0 || !seq.is_multiple_of(args.drop_every) {
             // W zastosowaniach produkcyjnych WebRTC pakiety budowane są przez kratkę `rtp`:
             let rtp_packet = Packet {
                 header: Header {
                     version: 2,
                     padding: false,
                     extension: false,
-                    marker: (seq % 30 == 0),
+                    marker: seq.is_multiple_of(30),
                     payload_type: 96,
                     sequence_number: seq,
                     timestamp: ts,

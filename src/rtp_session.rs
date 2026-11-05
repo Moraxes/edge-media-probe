@@ -52,8 +52,12 @@ impl SansIoRtpSession {
     }
 
     pub fn handle_rtp(&mut self, version: u8, ssrc: u32, seq: u16, payload_len: usize) {
-        if version == 2 && ssrc == self.media_ssrc && payload_len > 0 {
-            self.received_packets += 1;
+        if version == 2 && payload_len > 0 {
+            if self.received_packets == 0 {
+                self.media_ssrc = ssrc;
+            }
+            if ssrc == self.media_ssrc {
+                self.received_packets += 1;
 
             if let Some(prev) = self.highest_seq {
                 let delta = seq.wrapping_sub(prev);
@@ -86,6 +90,7 @@ impl SansIoRtpSession {
                 seq,
                 roc: self.roc,
             });
+            }
         }
     }
 
