@@ -5,6 +5,7 @@
 //! - Przekazywanie i zwrot własności bufora `Vec<u8>` (ochrona przed Use-After-Free i 0 alokacji),
 //! - Implementację dla Linuksa (`tokio-uring`) oraz wersję przenośną (`PortableUringStyleSink`).
 
+use futures_util::{Stream, StreamExt};
 use std::io;
 use std::path::Path;
 
@@ -71,19 +72,24 @@ impl AsyncFileSink for PortableUringStyleSink {
     }
 }
 
-/// Pętla zapisu ramek z recyklingiem pojedynczego bufora
-pub async fn record_captured_frames<S: AsyncFileSink>(
+/// Pętla zapisu ramek ze strumienia z recyklingiem pojedynczego bufora
+pub async fn record_captured_stream<S, St>(
     sink: &mut S,
-    frames: &[&[u8]],
-) -> io::Result<u64> {
+    stream: St,
+) -> io::Result<u64>
+where
+    S: AsyncFileSink,
+    St: Stream<Item = bytes::Bytes> + Unpin,
+{
     let mut reusable_buf = Vec::with_capacity(2048);
     let initial_ptr = reusable_buf.as_ptr();
     let mut offset = 0u64;
+    let mut stream = stream;
 
-    for frame in frames {
+    while let Some(frame) = stream.next().await {
         reusable_buf.clear();
         reusable_buf.extend_from_slice(&(frame.len() as u32).to_le_bytes());
-        reusable_buf.extend_from_slice(frame);
+        reusable_buf.extend_from_slice(&frame);
 
         let (written_res, returned_buf) = sink.write_all_at(offset, reusable_buf).await;
         let written = written_res?;
@@ -99,6 +105,15 @@ pub async fn record_captured_frames<S: AsyncFileSink>(
 
     sink.sync_data().await?;
     Ok(offset)
+}
+
+/// Pętla zapisu wycinka ramek oparta na strumieniowym zapisie z recyklingiem bufora
+pub async fn record_captured_frames<S: AsyncFileSink>(
+    sink: &mut S,
+    frames: &[&[u8]],
+) -> io::Result<u64> {
+    let frame_stream = tokio_stream::iter(frames.iter().map(|f| bytes::Bytes::copy_from_slice(f)));
+    record_captured_stream(sink, frame_stream).await
 }
 
 

@@ -159,29 +159,36 @@ pub fn record_rtp_gap_event(ssrc: u32, missing_seqs: &[u16], roc: u32) {
     );
 }
 
-/// Cykliczny kolektor metryk egzekutora Tokio (co 1s, dopasowane do interwału scrapowania Prometheusa)
+/// Cykliczny kolektor metryk egzekutora Tokio (oparty na kombinatorze IntervalStream z tokio-stream)
 pub fn spawn_runtime_metrics_collector() {
+    use futures_util::StreamExt;
+    use tokio_stream::wrappers::IntervalStream;
+
     tokio::spawn(async move {
         let handle = tokio::runtime::Handle::current();
-        let mut interval = tokio::time::interval(Duration::from_secs(1));
-        loop {
-            interval.tick().await;
-            let rt_metrics = handle.metrics();
-            for worker in 0..rt_metrics.num_workers() {
-                let w_label = worker.to_string();
-                #[cfg(tokio_unstable)]
-                {
-                    gauge!("tokio_worker_steal_count", "worker" => w_label.clone())
-                        .set(rt_metrics.worker_steal_count(worker) as f64);
-                    gauge!("tokio_worker_local_queue_depth", "worker" => w_label)
-                        .set(rt_metrics.worker_local_queue_depth(worker) as f64);
+        let interval = tokio::time::interval(Duration::from_secs(1));
+        let stream = IntervalStream::new(interval);
+
+        stream
+            .for_each(move |_| {
+                let rt_metrics = handle.metrics();
+                for worker in 0..rt_metrics.num_workers() {
+                    let w_label = worker.to_string();
+                    #[cfg(tokio_unstable)]
+                    {
+                        gauge!("tokio_worker_steal_count", "worker" => w_label.clone())
+                            .set(rt_metrics.worker_steal_count(worker) as f64);
+                        gauge!("tokio_worker_local_queue_depth", "worker" => w_label)
+                            .set(rt_metrics.worker_local_queue_depth(worker) as f64);
+                    }
+                    #[cfg(not(tokio_unstable))]
+                    {
+                        gauge!("tokio_worker_park_count", "worker" => w_label)
+                            .set(rt_metrics.worker_park_count(worker) as f64);
+                    }
                 }
-                #[cfg(not(tokio_unstable))]
-                {
-                    gauge!("tokio_worker_park_count", "worker" => w_label)
-                        .set(rt_metrics.worker_park_count(worker) as f64);
-                }
-            }
-        }
+                std::future::ready(())
+            })
+            .await;
     });
 }
