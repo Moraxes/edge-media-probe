@@ -15,72 +15,29 @@ pub struct ProbeWorkerReport {
 }
 
 /// Uniwersalna funkcja ponawiania prób wykorzystująca asynchroniczne domknięcia `AsyncFnMut`
-pub async fn with_retry<T, E, F>(mut op: F, max_retries: usize) -> Result<T, E>
+pub async fn with_retry<T, E, F>(mut _op: F, _max_retries: usize) -> Result<T, E>
 where
     F: AsyncFnMut() -> Result<T, E>,
 {
-    let mut attempt = 0;
-    loop {
-        match op().await {
-            Ok(val) => return Ok(val),
-            Err(_err) if attempt < max_retries => {
-                attempt += 1;
-                tokio::time::sleep(Duration::from_millis(50 * attempt as u64)).await;
-            }
-            Err(err) => return Err(err),
-        }
-    }
+    // Zadanie 1.1: Zaimplementuj mechanizm ponawiania prób z wykorzystaniem cechy AsyncFnMut (Rust 2024).
+    // Wymagania:
+    // 1. Wykonaj asynchroniczną operację `op().await`.
+    // 2. Jeśli operacja zwróci błąd i nie przekroczono `max_retries`, odczekaj czas zależny od próby
+    //    (np. 50 ms * numer próby za pomocą `tokio::time::sleep`) i spróbuj ponownie.
+    // 3. Po wyczerpaniu limitu zwróć ostatni napotkany błąd.
+    todo!("Zadanie 1.1: Zaimplementuj with_retry z backoffem opartym na AsyncFnMut")
 }
 
 /// Przykładowy orkiestrator nadzorujący zadaną liczbę strumieni
-pub async fn run_stream_orchestrator(stream_count: u32, timeout_dur: Duration) -> Vec<ProbeWorkerReport> {
-    let mut workers: JoinSet<Result<ProbeWorkerReport, &'static str>> = JoinSet::new();
-    let mut reports = Vec::new();
-
-    for idx in 1..=stream_count {
-        let ssrc = 0x1000_0000 + idx;
-        let sleep_ms = 15 * idx as u64;
-        workers.spawn(async move {
-            with_retry(
-                async move || {
-                    tokio::time::sleep(Duration::from_millis(sleep_ms)).await;
-                    Ok(ProbeWorkerReport {
-                        stream_ssrc: ssrc,
-                        status: "ACTIVE_STREAM",
-                    })
-                },
-                3,
-            )
-            .await
-        });
-    }
-
-    let global_deadline = tokio::time::sleep(timeout_dur);
-    tokio::pin!(global_deadline);
-
-    loop {
-        if workers.is_empty() {
-            break;
-        }
-        tokio::select! {
-            res = workers.join_next() => {
-                match res {
-                    Some(Ok(Ok(report))) => reports.push(report),
-                    Some(_) => {},
-                    None => break,
-                }
-            }
-            _ = &mut global_deadline => {
-                workers.abort_all();
-                break;
-            }
-            _ = tokio::signal::ctrl_c() => {
-                workers.abort_all();
-                break;
-            }
-        }
-    }
-
-    reports
+pub async fn run_stream_orchestrator(_stream_count: u32, _timeout_dur: Duration) -> Vec<ProbeWorkerReport> {
+    // Zadanie 1.1: Zaimplementuj orkiestrator zadań w Tokio:
+    // Wymagania:
+    // 1. Utwórz `JoinSet` dla zadań roboczych.
+    // 2. Uruchom `stream_count` zadań (spawn) z unikalnym SSRC (np. 0x1000_0000 + idx) i ponawianiem prób przez `with_retry`.
+    // 3. Zastosuj pętlę `tokio::select!` obsługującą:
+    //    - `workers.join_next()`,
+    //    - globalny timeout przypięty na stosie (`tokio::pin!`),
+    //    - sygnał wygaszenia `tokio::signal::ctrl_c()`.
+    // 4. Zwróć zebrane raporty `ProbeWorkerReport`.
+    todo!("Zadanie 1.1: Zaimplementuj run_stream_orchestrator z JoinSet i select!")
 }
-

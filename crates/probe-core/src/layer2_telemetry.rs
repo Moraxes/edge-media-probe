@@ -22,49 +22,42 @@ pub struct ProbeTelemetryHeader {
 }
 
 pub fn decode_udp_payloads_from_pcap<T: Activated>(
-    cap: &mut Capture<T>,
+    _cap: &mut Capture<T>,
 ) -> anyhow::Result<Vec<(u16, u16, Vec<u8>)>> {
-    let linktype = cap.get_datalink();
-    let mut results = Vec::new();
-
-    while let Ok(pkt) = cap.next_packet() {
-        let sliced = match linktype {
-            Linktype::ETHERNET => SlicedPacket::from_ethernet(pkt.data)?,
-            Linktype(113) if pkt.data.len() >= 16 => SlicedPacket::from_ip(&pkt.data[16..])?, // DLT_LINUX_SLL
-            _ => continue,
-        };
-
-        if let Some(TransportSlice::Udp(udp)) = sliced.transport {
-            results.push((udp.source_port(), udp.destination_port(), udp.payload().to_vec()));
-        }
-    }
-    Ok(results)
+    // Zadanie 3.4: Zaimplementuj ekstrakcję ładunków UDP z przechwyconych pakietów:
+    // Wymagania:
+    // 1. Sprawdź warstwę łącza danych za pomocą `cap.get_datalink()`.
+    // 2. W pętli `while let Ok(pkt) = cap.next_packet()` rozróżnij `Linktype::ETHERNET`
+    //    i `Linktype(113)` (Linux SLL).
+    // 3. Użyj `etherparse::SlicedPacket::from_ethernet` lub `from_ip`.
+    // 4. Jeśli pakiet zawiera warstwę UDP (`sliced.transport == Some(TransportSlice::Udp(udp))`),
+    //    zapisz krotkę `(udp.source_port(), udp.destination_port(), udp.payload().to_vec())`.
+    // 5. Zwróć wektor odebranych pakietów.
+    todo!("Zadanie 3.4: Zaimplementuj decode_udp_payloads_from_pcap z etherparse")
 }
 
 pub fn emit_telemetry_frame_in_place(
-    tx: &mut Box<dyn DataLinkSender>,
-    probe_id: u16,
-    rx_ts_us: u32,
-    rtp_payload: &[u8],
+    _tx: &mut Box<dyn DataLinkSender>,
+    _probe_id: u16,
+    _rx_ts_us: u32,
+    _rtp_payload: &[u8],
 ) -> anyhow::Result<()> {
-    let total_len = std::mem::size_of::<ProbeTelemetryHeader>() + rtp_payload.len();
-    tx.build_and_send(1, total_len, &mut |frame_buf: &mut [u8]| {
-        let (hdr_bytes, body_bytes) = frame_buf.split_at_mut(std::mem::size_of::<ProbeTelemetryHeader>());
-        let hdr = ProbeTelemetryHeader::mut_from_bytes(hdr_bytes)
-            .expect("Rozmiar dopasowany dokładnie przez split_at_mut");
-        hdr.probe_id = U16::new(probe_id);
-        hdr.flags = 0b0000_0001;
-        hdr.reserved_pad = 0;
-        hdr.rx_timestamp_us = U32::new(rx_ts_us);
-        body_bytes.copy_from_slice(rtp_payload);
-    })
-    .ok_or_else(|| anyhow::anyhow!("Brak bufora w kanale DataLinkSender"))??;
-    Ok(())
+    // Zadanie 3.4: Zaimplementuj bezalokacyjne wstrzykiwanie nagłówka telemetrii za pomocą zerocopy:
+    // Wymagania:
+    // 1. Oblicz całkowitą długość: `std::mem::size_of::<ProbeTelemetryHeader>() + rtp_payload.len()`.
+    // 2. Wywołaj `tx.build_and_send(1, total_len, &mut |frame_buf| { ... })`.
+    // 3. Podziel bufor ramki na część nagłówka i ciała (`frame_buf.split_at_mut(...)`).
+    // 4. Użyj `ProbeTelemetryHeader::mut_from_bytes(hdr_bytes)` do bezpośredniej edycji w buforze jądra/karty.
+    // 5. Ustaw pola `probe_id`, `flags`, `reserved_pad = 0`, `rx_timestamp_us`.
+    // 6. Skopiuj `rtp_payload` do części bufora ładunku.
+    todo!("Zadanie 3.4: Zaimplementuj emit_telemetry_frame_in_place z zerocopy")
 }
 
 pub fn parse_telemetry_frame_zero_copy(frame: &[u8]) -> anyhow::Result<(&ProbeTelemetryHeader, &[u8])> {
+    // Zadanie 3.4: Zaimplementuj bezalokacyjne odczytanie nagłówka telemetrii ze strumienia:
+    // Wymagania:
+    // 1. Użyj metody `ProbeTelemetryHeader::ref_from_prefix(frame)`.
+    // 2. Zwróć referencję do nagłówka oraz pozostały wycinek bufora.
     ProbeTelemetryHeader::ref_from_prefix(frame)
         .map_err(|e| anyhow::anyhow!("Błąd rzutowania zerocopy: {e:?}"))
 }
-
-

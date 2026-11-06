@@ -1,3 +1,5 @@
+#![allow(unused_imports, unused_variables, dead_code)]
+
 pub use rtp_parser;
 
 pub mod control_plane;

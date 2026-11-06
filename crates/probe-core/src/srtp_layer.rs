@@ -9,13 +9,11 @@ use webrtc_srtp::context::Context as SrtpContext;
 use webrtc_srtp::protection_profile::ProtectionProfile;
 
 pub fn create_srtp_pair() -> anyhow::Result<(SrtpContext, SrtpContext)> {
-    let master_key = [0x11u8; 16];
-    let master_salt = [0x22u8; 14];
-    let profile = ProtectionProfile::Aes128CmHmacSha1_80;
-
-    let tx_ctx = SrtpContext::new(&master_key, &master_salt, profile, None, None)?;
-    let rx_ctx = SrtpContext::new(&master_key, &master_salt, profile, None, None)?;
-    Ok((tx_ctx, rx_ctx))
+    // Zadanie 3.3: Skonfiguruj parę kontekstów SRTP (nadajnik TX i odbiornik RX):
+    // Wymagania:
+    // 1. Zdefiniuj 16-bajtowy klucz główny (np. [0x11; 16]) oraz 14-bajtową sól (np. [0x22; 14]).
+    // 2. Wybierz profil ochrony `ProtectionProfile::Aes128CmHmacSha1_80`.
+    // 3. Zainicjalizuj `tx_ctx` i `rx_ctx` za pomocą `SrtpContext::new(...)`.
+    // 4. Zwróć parę `(tx_ctx, rx_ctx)`.
+    todo!("Zadanie 3.3: Zaimplementuj create_srtp_pair z webrtc-srtp")
 }
-
-

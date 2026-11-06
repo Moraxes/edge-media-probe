@@ -11,18 +11,20 @@ use socket2::{Domain, Protocol, Socket, Type};
 use std::net::SocketAddr;
 use tokio::net::UdpSocket;
 
-// Re-eksport gotowych narzędzi parsowania z kratki rtp-parser
+// Re-eksport gotowych narzędzi parsowania z kratki pomocniczej rtp-parser
 pub use rtp_parser::{
     build_test_rtp_packet, classify_peeked_packet, parse_rtp_header, PacketClass, RtpHeader,
     RtpParseError,
 };
 
-pub fn bind_tuned_udp(addr: SocketAddr, rcv_buf_bytes: usize) -> std::io::Result<UdpSocket> {
-    let domain = Domain::for_address(addr);
-    let socket = Socket::new(domain, Type::DGRAM, Some(Protocol::UDP))?;
-    socket.set_reuse_address(true)?;
-    let _ = socket.set_recv_buffer_size(rcv_buf_bytes);
-    socket.set_nonblocking(true)?;
-    socket.bind(&addr.into())?;
-    UdpSocket::from_std(socket.into())
+pub fn bind_tuned_udp(_addr: SocketAddr, _rcv_buf_bytes: usize) -> std::io::Result<UdpSocket> {
+    // Zadanie 3.1: Skonfiguruj zoptymalizowane gniazdo UDP za pomocą biblioteki socket2:
+    // Wymagania:
+    // 1. Utwórz gniazdo dla odpowiedniej domeny (IPv4/IPv6 w zależności od adresu): `Domain::for_address(addr)`.
+    // 2. Włącz ponowne użycie adresu (`set_reuse_address(true)`).
+    // 3. Ustaw rozmiar bufora odbiorczego jądra (`set_recv_buffer_size(rcv_buf_bytes)`).
+    // 4. Przestaw gniazdo w tryb nieblokujący (`set_nonblocking(true)`).
+    // 5. Powiąż gniazdo z adresem (`bind(&addr.into())`).
+    // 6. Przekształć gniazdo w asynchroniczne `tokio::net::UdpSocket::from_std(socket.into())`.
+    todo!("Zadanie 3.1: Zaimplementuj bind_tuned_udp z socket2")
 }

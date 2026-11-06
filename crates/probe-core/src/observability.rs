@@ -16,84 +16,19 @@ use tracing_subscriber::{
 ///
 /// Zwraca strażnika `WorkerGuard`, który musi pozostać na stosie `main()`
 /// aż do zakończenia programu, aby zapewnić bezblokujące opróżnienie buforów (`flush`).
-///
-/// Obsługuje:
-/// - Zmienną środowiskową `LOG_FORMAT=json` do emisji zdarzeń w standardzie Cloud-Native JSON,
-/// - Filtr poziomów logowania `RUST_LOG` przez `EnvFilter`,
-/// - Diagnostykę `tokio-console` przy kompilacji z `--cfg tokio_unstable`.
 pub fn init_tracing(
-    service_name: &'static str,
+    _service_name: &'static str,
 ) -> Option<tracing_appender::non_blocking::WorkerGuard> {
-    let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info,probe_core=debug"));
-
-    // Nieblokujący writer (tracing-appender) na stdout zapobiega blokowaniu wątków roboczych Tokio:
-    let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stdout());
-
-    let is_json = std::env::var("LOG_FORMAT")
-        .map(|v| v.eq_ignore_ascii_case("json"))
-        .unwrap_or(false);
-
-    let fmt_layer = if is_json {
-        fmt::layer()
-            .json()
-            .with_current_span(true)
-            .with_span_list(true)
-            .with_writer(non_blocking)
-            .boxed()
-    } else {
-        fmt::layer()
-            .with_target(true)
-            .with_thread_ids(true)
-            .with_writer(non_blocking)
-            .boxed()
-    };
-
-    #[cfg(tokio_unstable)]
-    let console_layer = {
-        let (layer, server) = console_subscriber::ConsoleLayer::builder()
-            .with_default_env()
-            .build();
-
-        std::thread::Builder::new()
-            .name("console_subscriber".into())
-            .spawn(move || {
-                let runtime = tokio::runtime::Builder::new_current_thread()
-                    .enable_all()
-                    .build();
-                if let Ok(runtime) = runtime {
-                    runtime.block_on(async move {
-                        if let Err(err) = server.serve().await {
-                            tracing::warn!(
-                                %err,
-                                "Nie udało się uruchomić serwera gRPC tokio-console (np. port zajęty przez inną binarkę). Aby monitorować tę binarkę, ustaw TOKIO_CONSOLE_BIND=127.0.0.1:<inny_port>"
-                            );
-                        }
-                    });
-                }
-            })
-            .ok();
-
-        Some(layer)
-    };
-    #[cfg(not(tokio_unstable))]
-    let console_layer: Option<console_subscriber::ConsoleLayer> = None;
-
-    let subscriber = Registry::default()
-        .with(env_filter)
-        .with(fmt_layer)
-        .with(console_layer);
-
-    let _ = subscriber.try_init();
-
-    tracing::info!(
-        service = service_name,
-        json_format = is_json,
-        tokio_unstable = cfg!(tokio_unstable),
-        "Zainicjalizowano podsystem tracingu i telemetrii ustrukturyzowanej"
-    );
-
-    Some(guard)
+    // Zadanie 2.2: Skonfiguruj wielowarstwowy potok telemetrii tracing:
+    // Wymagania:
+    // 1. Zbuduj filtr poziomów z `EnvFilter::try_from_default_env()`.
+    // 2. Skonfiguruj nieblokujący zapis na stdout: `tracing_appender::non_blocking(std::io::stdout())`.
+    // 3. Sprawdź zmienną środowiskową `LOG_FORMAT=json` – jeśli jest włączona, użyj formatowania `fmt::layer().json()`,
+    //    w przeciwnym razie użyj formatowania standardowego (`.with_target(true).with_thread_ids(true)`).
+    // 4. Jeśli włączono `tokio_unstable`, zainicjalizuj warstwę `console_subscriber::ConsoleLayer`.
+    // 5. Zarejestruj subskrybenta za pomocą `Registry::default().with(...).try_init()`.
+    // 6. Zwróć `Some(guard)` przekazując strażnika `WorkerGuard`.
+    todo!("Zadanie 2.2: Zaimplementuj init_tracing z obsługą formatu JSON i warstw tracingu")
 }
 
 /// Strażnik RAII gwarantujący Cancellation Safety dla metryk zasobów w locie
@@ -103,13 +38,19 @@ pub struct ActiveResourceGuard {
 
 impl ActiveResourceGuard {
     pub fn new(metric_name: &'static str) -> Self {
-        gauge!(metric_name).increment(1.0);
-        Self { metric_name }
+        // Zadanie 2.3: Zaimplementuj strażnika RAII dla metryk typu gauge:
+        // Wymagania:
+        // 1. Zwiększ wartość metryki `gauge!(metric_name).increment(1.0)`.
+        // 2. Zwróć instancję `ActiveResourceGuard { metric_name }`.
+        todo!("Zadanie 2.3: Zaimplementuj ActiveResourceGuard::new")
     }
 }
 
 impl Drop for ActiveResourceGuard {
     fn drop(&mut self) {
+        // Zadanie 2.3: W momencie niszczenia strażnika (np. przy porzuceniu Future w select!):
+        // Wymagania:
+        // 1. Zmniejsz wartość metryki `gauge!(self.metric_name).decrement(1.0)`.
         gauge!(self.metric_name).decrement(1.0);
     }
 }
@@ -119,29 +60,39 @@ pub struct ProbeDataplaneMetrics;
 
 impl ProbeDataplaneMetrics {
     #[inline]
-    pub fn on_packet(kind: &'static str, payload_len: usize, interarrival_us: f64) {
-        counter!("probe_packets_total", "kind" => kind).increment(1);
-        counter!("probe_bytes_total", "kind" => kind).increment(payload_len as u64);
-        histogram!("probe_interarrival_jitter_us", "kind" => kind).record(interarrival_us);
+    pub fn on_packet(_kind: &'static str, _payload_len: usize, _interarrival_us: f64) {
+        // Zadanie 2.3: Zarejestruj atomowe metryki w gorącej ścieżce przetwarzania:
+        // Wymagania:
+        // 1. `counter!("probe_packets_total", "kind" => kind).increment(1);`
+        // 2. `counter!("probe_bytes_total", "kind" => kind).increment(payload_len as u64);`
+        // 3. `histogram!("probe_interarrival_jitter_us", "kind" => kind).record(interarrival_us);`
+        todo!("Zadanie 2.3: Zaimplementuj rejestrację metryk on_packet")
     }
 
     #[inline]
-    pub fn on_rtp_gap_detected(missing_packets: usize) {
-        counter!("probe_rtp_packets_lost_total").increment(missing_packets as u64);
-        counter!("probe_rtcp_nack_requests_total").increment(1);
+    pub fn on_rtp_gap_detected(_missing_packets: usize) {
+        // Zadanie 2.3: Zarejestruj wykrycie ubytku pakietów RTP:
+        // Wymagania:
+        // 1. Zwiększ licznik `probe_rtp_packets_lost_total` o liczbę brakujących pakietów.
+        // 2. Zwiększ licznik `probe_rtcp_nack_requests_total` o 1.
+        todo!("Zadanie 2.3: Zaimplementuj rejestrację metryk on_rtp_gap_detected")
     }
 
     #[inline]
     pub fn on_srtp_auth_error() {
-        counter!("probe_srtp_auth_failures_total").increment(1);
+        // Zadanie 2.3: Zarejestruj błąd autentykacji SRTP:
+        // Wymagania:
+        // 1. Zwiększ licznik `probe_srtp_auth_failures_total` o 1.
+        todo!("Zadanie 2.3: Zaimplementuj rejestrację metryk on_srtp_auth_error")
     }
 
     #[inline]
-    pub fn on_rtcp_receiver_report(lost_packets: u32, extended_highest_seq: u32) {
-        if extended_highest_seq > 0 {
-            let ratio = (lost_packets as f64) / (extended_highest_seq as f64);
-            gauge!("probe_rtp_loss_ratio").set((ratio * 100.0).clamp(0.0, 100.0));
-        }
+    pub fn on_rtcp_receiver_report(_lost_packets: u32, _extended_highest_seq: u32) {
+        // Zadanie 2.3: Oblicz i zaktualizuj współczynnik strat pakietów w metryce gauge:
+        // Wymagania:
+        // 1. Oblicz stosunek strat: lost_packets / extended_highest_seq.
+        // 2. Ustaw `gauge!("probe_rtp_loss_ratio").set(...)`.
+        todo!("Zadanie 2.3: Zaimplementuj rejestrację metryki on_rtcp_receiver_report")
     }
 }
 
@@ -151,6 +102,11 @@ impl ProbeDataplaneMetrics {
     fields(ssrc = %format!("{ssrc:#010x}"), roc)
 )]
 pub fn record_rtp_gap_event(ssrc: u32, missing_seqs: &[u16], roc: u32) {
+    // Zadanie 2.2: Wyemituj ustrukturyzowany rekord anomalii w logach tracing:
+    // Wymagania:
+    // 1. Użyj makra `tracing::warn!`.
+    // 2. Przekaż pola strukturalne: roc, missing_count = missing_seqs.len(), ?missing_seqs.
+    // 3. Dodaj czytelny komunikat o wykryciu luki sekwencji i generowaniu NACK.
     warn!(
         roc,
         missing_count = missing_seqs.len(),
@@ -161,34 +117,11 @@ pub fn record_rtp_gap_event(ssrc: u32, missing_seqs: &[u16], roc: u32) {
 
 /// Cykliczny kolektor metryk egzekutora Tokio (oparty na kombinatorze IntervalStream z tokio-stream)
 pub fn spawn_runtime_metrics_collector() {
-    use futures_util::StreamExt;
-    use tokio_stream::wrappers::IntervalStream;
-
-    tokio::spawn(async move {
-        let handle = tokio::runtime::Handle::current();
-        let interval = tokio::time::interval(Duration::from_secs(1));
-        let stream = IntervalStream::new(interval);
-
-        stream
-            .for_each(move |_| {
-                let rt_metrics = handle.metrics();
-                for worker in 0..rt_metrics.num_workers() {
-                    let w_label = worker.to_string();
-                    #[cfg(tokio_unstable)]
-                    {
-                        gauge!("tokio_worker_steal_count", "worker" => w_label.clone())
-                            .set(rt_metrics.worker_steal_count(worker) as f64);
-                        gauge!("tokio_worker_local_queue_depth", "worker" => w_label)
-                            .set(rt_metrics.worker_local_queue_depth(worker) as f64);
-                    }
-                    #[cfg(not(tokio_unstable))]
-                    {
-                        gauge!("tokio_worker_park_count", "worker" => w_label)
-                            .set(rt_metrics.worker_park_count(worker) as f64);
-                    }
-                }
-                std::future::ready(())
-            })
-            .await;
-    });
+    // Zadanie 2.1: Uruchom asynchroniczne zadanie cyklicznie odpytujące metryki egzekutora Tokio:
+    // Wymagania:
+    // 1. Pobierz uchwyt egzekutora `tokio::runtime::Handle::current()`.
+    // 2. Skonfiguruj `tokio::time::interval(Duration::from_secs(1))` i owiń go w `IntervalStream`.
+    // 3. W pętli pobieraj `handle.metrics()` i emituj `tokio_worker_steal_count`, `tokio_worker_local_queue_depth`
+    //    lub `tokio_worker_park_count` dla każdego wątku roboczego.
+    todo!("Zadanie 2.1: Zaimplementuj spawn_runtime_metrics_collector")
 }

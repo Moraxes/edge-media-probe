@@ -7,8 +7,6 @@
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use std::time::Duration;
-use tracing::{info, warn, Span};
 
 #[derive(Clone)]
 pub struct SrtpKeyMaterial {
@@ -61,115 +59,36 @@ pub struct KmsClient {
 }
 
 impl KmsClient {
-    pub fn new(base_url: String) -> Result<Self, reqwest::Error> {
-        let client = reqwest::Client::builder()
-            .use_rustls_tls()
-            .no_proxy()
-            .timeout(Duration::from_secs(5))
-            .pool_idle_timeout(Duration::from_secs(90))
-            .tcp_nodelay(true)
-            .build()?;
-
-        Ok(Self { client, base_url })
+    pub fn new(_base_url: String) -> Result<Self, reqwest::Error> {
+        // Zadanie 1.2: Skonfiguruj klienta HTTP `reqwest::Client` z użyciem `ClientBuilder`:
+        // Wymagania:
+        // 1. Włącz obsługę Rustls (`.use_rustls_tls()`), wyłącz proxy (`.no_proxy()`).
+        // 2. Ustaw timeout ogólny (np. 5 s), pool_idle_timeout (np. 90 s) oraz tcp_nodelay(true).
+        // 3. Zwróć instancję `KmsClient { client, base_url }`.
+        todo!("Zadanie 1.2: Skonfiguruj klienta reqwest z use_rustls_tls()")
     }
 
     /// Pobiera materiał klucza SRTP dla strumienia o zadanym SSRC
-    #[tracing::instrument(
-        name = "kms.fetch_srtp_keys",
-        skip(self),
-        fields(
-            ssrc = %format!("{ssrc:#010x}"),
-            correlation_id = tracing::field::Empty,
-            http.status = tracing::field::Empty
-        )
-    )]
-    pub async fn fetch_srtp_keys(&self, ssrc: u32) -> Result<SrtpKeyMaterial, KmsError> {
-        let correlation_id = format!("probe-req-{ssrc:08x}");
-        Span::current().record("correlation_id", &correlation_id);
-
-        let url = format!("{}/v1/keys/{:#010x}", self.base_url, ssrc);
-        info!(url = %url, "Wysyłanie zapytania KMS o materiał klucza SRTP");
-
-        let resp = self
-            .client
-            .get(&url)
-            .header("X-Correlation-ID", &correlation_id)
-            .header("Accept", "application/json")
-            .send()
-            .await?;
-
-        Span::current().record("http.status", resp.status().as_u16());
-
-        if !resp.status().is_success() {
-            warn!(status = %resp.status(), "Serwer KMS zwrócił błąd HTTP");
-            return Err(KmsError::ServerError(resp.status()));
-        }
-
-        let body = resp.json::<KmsKeyResponse>().await?;
-
-        let key_bytes = hex::decode(&body.master_key_hex)?;
-        let salt_bytes = hex::decode(&body.master_salt_hex)?;
-
-        if key_bytes.len() != 16 {
-            return Err(KmsError::InvalidKeyLength {
-                expected: 16,
-                actual: key_bytes.len(),
-            });
-        }
-        if salt_bytes.len() != 14 {
-            return Err(KmsError::InvalidKeyLength {
-                expected: 14,
-                actual: salt_bytes.len(),
-            });
-        }
-
-        let mut master_key = [0u8; 16];
-        let mut master_salt = [0u8; 14];
-        master_key.copy_from_slice(&key_bytes);
-        master_salt.copy_from_slice(&salt_bytes);
-
-        info!("Pomyślnie pobrano i zweryfikowano materiał kryptograficzny SRTP");
-
-        Ok(SrtpKeyMaterial {
-            ssrc: body.ssrc,
-            master_key,
-            master_salt,
-        })
+    pub async fn fetch_srtp_keys(&self, _ssrc: u32) -> Result<SrtpKeyMaterial, KmsError> {
+        // Zadanie 1.2: Zaimplementuj zapytanie do serwera KMS:
+        // Wymagania:
+        // 1. Wyślij zapytanie GET pod adres `{base_url}/v1/keys/{ssrc:#010x}`.
+        // 2. Dodaj nagłówek korelacyjny "X-Correlation-ID" oraz "Accept: application/json".
+        // 3. Sprawdź czy status odpowiedzi to sukces (w przeciwnym razie zwróć `KmsError::ServerError`).
+        // 4. Zdeserializuj treść jako `KmsKeyResponse`.
+        // 5. Zdekoduj `master_key_hex` oraz `master_salt_hex` za pomocą biblioteki `hex`.
+        // 6. Zweryfikuj rozmiary (16 bajtów dla klucza, 14 bajtów dla soli) i zwróć `SrtpKeyMaterial`.
+        todo!("Zadanie 1.2: Zaimplementuj fetch_srtp_keys z walidacją kryptograficzną")
     }
 
     /// Wysyła powiadomienie o naruszeniu SLA lub anomalii jakości strumienia
-    #[tracing::instrument(
-        name = "control_plane.send_sla_alert",
-        skip(self, alert),
-        fields(
-            ssrc = %format!("{:#010x}", alert.ssrc),
-            probe_id = %alert.probe_id,
-            fraction_lost = alert.fraction_lost,
-            http.status = tracing::field::Empty
-        )
-    )]
-    pub async fn send_sla_alert(&self, alert: &SlaAlertPayload) -> Result<(), KmsError> {
-        let url = format!("{}/v1/alerts", self.base_url);
-        info!(reason = %alert.reason, "Wysyłanie alertu SLA do Control Plane");
-
-        let resp = self
-            .client
-            .post(&url)
-            .json(alert)
-            .timeout(Duration::from_secs(3))
-            .send()
-            .await?;
-
-        Span::current().record("http.status", resp.status().as_u16());
-
-        if !resp.status().is_success() {
-            warn!(status = %resp.status(), "Błąd wysyłania alertu SLA do Control Plane");
-            return Err(KmsError::ServerError(resp.status()));
-        }
-
-        info!("Alert SLA został przyjęty przez Control Plane");
-        Ok(())
+    pub async fn send_sla_alert(&self, _alert: &SlaAlertPayload) -> Result<(), KmsError> {
+        // Zadanie 1.2: Zaimplementuj wysyłanie alertu SLA:
+        // Wymagania:
+        // 1. Wyślij zapytanie POST pod adres `{base_url}/v1/alerts`.
+        // 2. Przekaż strukturę `alert` jako treść JSON.
+        // 3. Ustaw timeout na 3 sekundy.
+        // 4. Zweryfikuj kod odpowiedzi HTTP.
+        todo!("Zadanie 1.2: Zaimplementuj send_sla_alert z wysyłaniem JSON")
     }
 }
-
-
