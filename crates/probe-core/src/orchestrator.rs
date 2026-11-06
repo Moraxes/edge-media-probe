@@ -19,12 +19,12 @@ pub async fn with_retry<T, E, F>(mut _op: F, _max_retries: usize) -> Result<T, E
 where
     F: AsyncFnMut() -> Result<T, E>,
 {
-    // Zadanie 1.1: Zaimplementuj with_retry z backoffem (podpowiedź: git show hint-1.1)
-    todo!("Zadanie 1.1: Zaimplementuj with_retry z backoffem opartym na AsyncFnMut")
+    // Zadanie 1.1: Zaimplementuj with_retry z backoffem
+    todo!()
 }
 
 /// Przykładowy orkiestrator nadzorujący zadaną liczbę strumieni
 pub async fn run_stream_orchestrator(_stream_count: u32, _timeout_dur: Duration) -> Vec<ProbeWorkerReport> {
-    // Zadanie 1.1: Zaimplementuj nadzór nad zadaniami w JoinSet i select! (podpowiedź: git show hint-1.1)
-    todo!("Zadanie 1.1: Zaimplementuj run_stream_orchestrator z JoinSet i select!")
+    // Zadanie 1.1: Zaimplementuj nadzór nad zadaniami w JoinSet i select!
+    todo!()
 }

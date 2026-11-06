@@ -18,6 +18,6 @@ pub use rtp_parser::{
 };
 
 pub fn bind_tuned_udp(_addr: SocketAddr, _rcv_buf_bytes: usize) -> std::io::Result<UdpSocket> {
-    // Zadanie 3.1: Skonfiguruj gniazdo UDP z socket2 i przekaż do Tokio (podpowiedź: git show hint-3.1)
-    todo!("Zadanie 3.1: Zaimplementuj bind_tuned_udp z socket2")
+    // Zadanie 3.1: Skonfiguruj gniazdo UDP z socket2 i przekaż do Tokio
+    todo!()
 }

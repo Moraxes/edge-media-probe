@@ -28,8 +28,8 @@ pub enum ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        // Zadanie 1.3: Zaimplementuj mapowanie błędu domenowego na odpowiedź HTTP (podpowiedź: git show hint-1.3)
-        todo!("Zadanie 1.3: Zaimplementuj IntoResponse dla ApiError")
+        // Zadanie 1.3: Zaimplementuj mapowanie błędu domenowego na odpowiedź HTTP
+        todo!()
     }
 }
 
@@ -37,8 +37,8 @@ impl IntoResponse for ApiError {
 pub async fn handle_get_kms_keys(
     Path(_ssrc_hex): Path<String>,
 ) -> Result<Json<crate::kms_client::KmsKeyResponse>, ApiError> {
-    // Zadanie 1.3: Zwróć materiał klucza SRTP dla podanego SSRC (podpowiedź: git show hint-1.3)
-    todo!("Zadanie 1.3: Zaimplementuj handle_get_kms_keys")
+    // Zadanie 1.3: Zwróć materiał klucza SRTP dla podanego SSRC
+    todo!()
 }
 
 /// Endpoint Webhooka SLA: POST /v1/alerts
@@ -46,11 +46,11 @@ pub async fn handle_post_sla_alert(
     State(_state): State<Arc<AppState>>,
     Json(_payload): Json<crate::kms_client::SlaAlertPayload>,
 ) -> Result<StatusCode, ApiError> {
-    // Zadanie 1.3: Zarejestruj alert SLA w transakcji SQLite (podpowiedź: git show hint-1.3)
-    todo!("Zadanie 1.3: Zaimplementuj handle_post_sla_alert z transakcją SQLx")
+    // Zadanie 1.3: Zarejestruj alert SLA w transakcji SQLite
+    todo!()
 }
 
 pub fn create_control_plane_router(_state: Arc<AppState>) -> Router {
-    // Zadanie 1.3: Skonfiguruj router tras Axum (podpowiedź: git show hint-1.3)
-    todo!("Zadanie 1.3: Zaimplementuj create_control_plane_router")
+    // Zadanie 1.3: Skonfiguruj router tras Axum
+    todo!()
 }

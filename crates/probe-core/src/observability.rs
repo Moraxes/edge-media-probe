@@ -19,8 +19,8 @@ use tracing_subscriber::{
 pub fn init_tracing(
     _service_name: &'static str,
 ) -> Option<tracing_appender::non_blocking::WorkerGuard> {
-    // Zadanie 2.2: Skonfiguruj wielowarstwowy potok telemetrii tracing (podpowiedź: git show hint-2.2)
-    todo!("Zadanie 2.2: Zaimplementuj init_tracing z obsługą formatu JSON i warstw tracingu")
+    // Zadanie 2.2: Skonfiguruj wielowarstwowy potok telemetrii tracing
+    todo!()
 }
 
 /// Strażnik RAII gwarantujący Cancellation Safety dla metryk zasobów w locie
@@ -30,8 +30,8 @@ pub struct ActiveResourceGuard {
 
 impl ActiveResourceGuard {
     pub fn new(metric_name: &'static str) -> Self {
-        // Zadanie 2.3: Inkrementacja metryki gauge w konstruktorze strażnika RAII (podpowiedź: git show hint-2.3)
-        todo!("Zadanie 2.3: Zaimplementuj ActiveResourceGuard::new")
+        // Zadanie 2.3: Inkrementacja metryki gauge w konstruktorze strażnika RAII
+        todo!()
     }
 }
 
@@ -47,26 +47,26 @@ pub struct ProbeDataplaneMetrics;
 impl ProbeDataplaneMetrics {
     #[inline]
     pub fn on_packet(_kind: &'static str, _payload_len: usize, _interarrival_us: f64) {
-        // Zadanie 2.3: Rejestracja atomowych metryk na gorącej ścieżce pakietów (podpowiedź: git show hint-2.3)
-        todo!("Zadanie 2.3: Zaimplementuj rejestrację metryk on_packet")
+        // Zadanie 2.3: Rejestracja atomowych metryk na gorącej ścieżce pakietów
+        todo!()
     }
 
     #[inline]
     pub fn on_rtp_gap_detected(_missing_packets: usize) {
-        // Zadanie 2.3: Zwiększenie liczników strat i żądań RTCP NACK (podpowiedź: git show hint-2.3)
-        todo!("Zadanie 2.3: Zaimplementuj rejestrację metryk on_rtp_gap_detected")
+        // Zadanie 2.3: Zwiększenie liczników strat i żądań RTCP NACK
+        todo!()
     }
 
     #[inline]
     pub fn on_srtp_auth_error() {
-        // Zadanie 2.3: Zwiększenie licznika błędów autentykacji SRTP (podpowiedź: git show hint-2.3)
-        todo!("Zadanie 2.3: Zaimplementuj rejestrację metryk on_srtp_auth_error")
+        // Zadanie 2.3: Zwiększenie licznika błędów autentykacji SRTP
+        todo!()
     }
 
     #[inline]
     pub fn on_rtcp_receiver_report(_lost_packets: u32, _extended_highest_seq: u32) {
-        // Zadanie 2.3: Aktualizacja współczynnika strat w metryce gauge (podpowiedź: git show hint-2.3)
-        todo!("Zadanie 2.3: Zaimplementuj rejestrację metryki on_rtcp_receiver_report")
+        // Zadanie 2.3: Aktualizacja współczynnika strat w metryce gauge
+        todo!()
     }
 }
 
@@ -86,6 +86,6 @@ pub fn record_rtp_gap_event(ssrc: u32, missing_seqs: &[u16], roc: u32) {
 
 /// Cykliczny kolektor metryk egzekutora Tokio (oparty na kombinatorze IntervalStream z tokio-stream)
 pub fn spawn_runtime_metrics_collector() {
-    // Zadanie 2.1: Cykliczny zrzut metryk wykonawcy Tokio przez IntervalStream (podpowiedź: git show hint-2.1)
-    todo!("Zadanie 2.1: Zaimplementuj spawn_runtime_metrics_collector")
+    // Zadanie 2.1: Cykliczny zrzut metryk wykonawcy Tokio przez IntervalStream
+    todo!()
 }

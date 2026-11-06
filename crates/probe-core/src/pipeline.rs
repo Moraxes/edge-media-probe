@@ -19,6 +19,6 @@ pub async fn process_srtp_datagram_with_observability_and_uring<S: AsyncFileSink
     _disk_offset: &mut u64,
     _ring_buf: Vec<u8>,
 ) -> io::Result<Vec<u8>> {
-    // Zadanie 3.5 (Capstone): Zintegrowana pętla przetwarzania pakietu (podpowiedź: git show hint-3.5)
-    todo!("Zadanie 3.5 (Capstone): Zintegruj potok pakietowy Data Plane, Control Plane i Observability")
+    // Zadanie 3.5 (Capstone): Zintegrowana pętla przetwarzania pakietu
+    todo!()
 }

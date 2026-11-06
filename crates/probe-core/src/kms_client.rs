@@ -60,19 +60,19 @@ pub struct KmsClient {
 
 impl KmsClient {
     pub fn new(_base_url: String) -> Result<Self, reqwest::Error> {
-        // Zadanie 1.2: Skonfiguruj klienta reqwest z obsługą rustls (podpowiedź: git show hint-1.2)
-        todo!("Zadanie 1.2: Skonfiguruj klienta reqwest z use_rustls_tls()")
+        // Zadanie 1.2: Skonfiguruj klienta reqwest z obsługą rustls
+        todo!()
     }
 
     /// Pobiera materiał klucza SRTP dla strumienia o zadanym SSRC
     pub async fn fetch_srtp_keys(&self, _ssrc: u32) -> Result<SrtpKeyMaterial, KmsError> {
-        // Zadanie 1.2: Pobierz materiał klucza SRTP z KMS przez GET (podpowiedź: git show hint-1.2)
-        todo!("Zadanie 1.2: Zaimplementuj fetch_srtp_keys z walidacją kryptograficzną")
+        // Zadanie 1.2: Pobierz materiał klucza SRTP z KMS przez GET
+        todo!()
     }
 
     /// Wysyła powiadomienie o naruszeniu SLA lub anomalii jakości strumienia
     pub async fn send_sla_alert(&self, _alert: &SlaAlertPayload) -> Result<(), KmsError> {
-        // Zadanie 1.2: Wyślij alert SLA jako JSON przez POST (podpowiedź: git show hint-1.2)
-        todo!("Zadanie 1.2: Zaimplementuj send_sla_alert z wysyłaniem JSON")
+        // Zadanie 1.2: Wyślij alert SLA jako JSON przez POST
+        todo!()
     }
 }

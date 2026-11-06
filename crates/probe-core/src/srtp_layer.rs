@@ -9,6 +9,6 @@ use webrtc_srtp::context::Context as SrtpContext;
 use webrtc_srtp::protection_profile::ProtectionProfile;
 
 pub fn create_srtp_pair() -> anyhow::Result<(SrtpContext, SrtpContext)> {
-    // Zadanie 3.3: Inicjalizacja pary kontekstów SRTP TX i RX (podpowiedź: git show hint-3.3)
-    todo!("Zadanie 3.3: Zaimplementuj create_srtp_pair z webrtc-srtp")
+    // Zadanie 3.3: Inicjalizacja pary kontekstów SRTP TX i RX
+    todo!()
 }

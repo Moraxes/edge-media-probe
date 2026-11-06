@@ -52,8 +52,8 @@ impl SansIoRtpSession {
     }
 
     pub fn handle_rtp(&mut self, _version: u8, _ssrc: u32, _seq: u16, _payload_len: usize) {
-        // Zadanie 3.2: Maszyna stanów Sans-I/O z wrapping_sub i licznikiem ROC (podpowiedź: git show hint-3.2)
-        todo!("Zadanie 3.2: Zaimplementuj handle_rtp z arytmetyką wrapping_sub i ROC")
+        // Zadanie 3.2: Maszyna stanów Sans-I/O z wrapping_sub i licznikiem ROC
+        todo!()
     }
 
     pub fn poll_timeout(&self) -> Instant {
@@ -61,8 +61,8 @@ impl SansIoRtpSession {
     }
 
     pub fn handle_timeout(&mut self, _now: Instant) {
-        // Zadanie 3.2: Okresowe generowanie raportu RTCP Receiver Report (podpowiedź: git show hint-3.2)
-        todo!("Zadanie 3.2: Zaimplementuj handle_timeout generujący RTCP Receiver Report")
+        // Zadanie 3.2: Okresowe generowanie raportu RTCP Receiver Report
+        todo!()
     }
 
     pub fn poll_output(&mut self) -> Option<ProtocolOutput> {
@@ -71,6 +71,6 @@ impl SansIoRtpSession {
 }
 
 pub fn sync_av_pair_metrics(_streams: &mut [StreamMetrics], _audio_idx: usize, _video_idx: usize) -> bool {
-    // Zadanie 3.2: Bezpieczna modyfikacja dwóch strumieni z slice::get_disjoint_mut (podpowiedź: git show hint-3.2)
-    todo!("Zadanie 3.2: Zaimplementuj sync_av_pair_metrics z slice::get_disjoint_mut")
+    // Zadanie 3.2: Bezpieczna modyfikacja dwóch strumieni z slice::get_disjoint_mut
+    todo!()
 }

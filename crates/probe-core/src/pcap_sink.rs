@@ -57,8 +57,8 @@ impl PortableUringStyleSink {
 
 impl AsyncFileSink for PortableUringStyleSink {
     async fn write_all_at(&mut self, _offset: u64, _buf: Vec<u8>) -> (io::Result<usize>, Vec<u8>) {
-        // Zadanie 1.4: Asynchroniczny zapis plikowy ze zwrotem własności bufora (podpowiedź: git show hint-1.4)
-        todo!("Zadanie 1.4: Zaimplementuj write_all_at w modelu completion-based")
+        // Zadanie 1.4: Asynchroniczny zapis plikowy ze zwrotem własności bufora
+        todo!()
     }
 
     async fn sync_data(&mut self) -> io::Result<()> {
@@ -75,8 +75,8 @@ where
     S: AsyncFileSink,
     St: Stream<Item = bytes::Bytes> + Unpin,
 {
-    // Zadanie 1.4: Pętla zapisu ramek ze strumienia z recyklingiem bufora (podpowiedź: git show hint-1.4)
-    todo!("Zadanie 1.4: Zaimplementuj record_captured_stream z recyklingiem bufora")
+    // Zadanie 1.4: Pętla zapisu ramek ze strumienia z recyklingiem bufora
+    todo!()
 }
 
 /// Pętla zapisu wycinka ramek oparta na strumieniowym zapisie z recyklingiem bufora

@@ -24,8 +24,8 @@ pub struct ProbeTelemetryHeader {
 pub fn decode_udp_payloads_from_pcap<T: Activated>(
     _cap: &mut Capture<T>,
 ) -> anyhow::Result<Vec<(u16, u16, Vec<u8>)>> {
-    // Zadanie 3.4: Ekstrakcja ładunków UDP z ramek PCAP przez etherparse (podpowiedź: git show hint-3.4)
-    todo!("Zadanie 3.4: Zaimplementuj decode_udp_payloads_from_pcap z etherparse")
+    // Zadanie 3.4: Ekstrakcja ładunków UDP z ramek PCAP przez etherparse
+    todo!()
 }
 
 pub fn emit_telemetry_frame_in_place(
@@ -34,8 +34,8 @@ pub fn emit_telemetry_frame_in_place(
     _rx_ts_us: u32,
     _rtp_payload: &[u8],
 ) -> anyhow::Result<()> {
-    // Zadanie 3.4: Bezalokacyjne wstrzykiwanie nagłówka telemetrii z zerocopy (podpowiedź: git show hint-3.4)
-    todo!("Zadanie 3.4: Zaimplementuj emit_telemetry_frame_in_place z zerocopy")
+    // Zadanie 3.4: Bezalokacyjne wstrzykiwanie nagłówka telemetrii z zerocopy
+    todo!()
 }
 
 pub fn parse_telemetry_frame_zero_copy(frame: &[u8]) -> anyhow::Result<(&ProbeTelemetryHeader, &[u8])> {
