@@ -1,5 +1,5 @@
-use edge_media_probe::control_plane::{create_control_plane_router, AppState};
-use edge_media_probe::kms_client::{KmsClient, SlaAlertPayload};
+use probe_core::control_plane::{create_control_plane_router, AppState};
+use probe_core::kms_client::{KmsClient, SlaAlertPayload};
 use sqlx::SqlitePool;
 use std::sync::Arc;
 

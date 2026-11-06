@@ -1,13 +1,13 @@
 use bytes::BytesMut;
 use clap::Parser;
-use edge_media_probe::observability::{
+use probe_core::observability::{
     init_tracing, spawn_runtime_metrics_collector, ProbeDataplaneMetrics,
 };
-use edge_media_probe::pcap_sink::PortableUringStyleSink;
-use edge_media_probe::pipeline::process_srtp_datagram_with_observability_and_uring;
-use edge_media_probe::rtp_session::SansIoRtpSession;
-use edge_media_probe::srtp_layer::create_srtp_pair;
-use edge_media_probe::udp_ingress::bind_tuned_udp;
+use probe_core::pcap_sink::PortableUringStyleSink;
+use probe_core::pipeline::process_srtp_datagram_with_observability_and_uring;
+use probe_core::rtp_session::SansIoRtpSession;
+use probe_core::srtp_layer::create_srtp_pair;
+use probe_core::udp_ingress::bind_tuned_udp;
 use metrics_exporter_prometheus::PrometheusBuilder;
 use std::net::SocketAddr;
 use std::time::{Duration, Instant};
@@ -61,13 +61,13 @@ async fn main() -> anyhow::Result<()> {
     let forward_addr = args.forward;
     let metrics_addr = args.metrics;
 
-    println!("⚡ [Edge Media Probe] Start węzła sieciowego:");
-    println!("   • Nasłuch UDP:    {listen_addr}");
-    println!("   • Metryki HTTP:   http://{metrics_addr}/metrics");
+    println!("[Edge Media Probe] Start węzła sieciowego:");
+    println!("   - Nasłuch UDP:    {listen_addr}");
+    println!("   - Metryki HTTP:   http://{metrics_addr}/metrics");
     if let Some(fwd) = forward_addr {
-        println!("   • Przekazywanie:  {fwd} (np. VLC / ffplay stream.sdp)");
+        println!("   - Przekazywanie:  {fwd} (np. VLC / ffplay stream.sdp)");
     } else {
-        println!("   • Przekazywanie:  brak (tryb czystej sondy / sniffera)");
+        println!("   - Przekazywanie:  brak (tryb czystej sondy / sniffera)");
     }
 
     let rx_socket = bind_tuned_udp(listen_addr, 512 * 1024)?;
@@ -107,7 +107,7 @@ async fn main() -> anyhow::Result<()> {
         // Okresowe sprawdzanie raportów RTCP Receiver Report (RR)
         rtp_session.handle_timeout(now);
         while let Some(output) = rtp_session.poll_output() {
-            if let edge_media_probe::rtp_session::ProtocolOutput::SendRtcpReceiverReport {
+            if let probe_core::rtp_session::ProtocolOutput::SendRtcpReceiverReport {
                 lost_packets,
                 extended_highest_seq,
                 ..

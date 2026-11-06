@@ -1,4 +1,4 @@
-use edge_media_probe::pcap_sink::{record_captured_frames, record_captured_stream, PortableUringStyleSink};
+use probe_core::pcap_sink::{record_captured_frames, record_captured_stream, PortableUringStyleSink};
 use std::io;
 
 #[tokio::test]

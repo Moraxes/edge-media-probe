@@ -25,7 +25,7 @@ pub fn init_tracing(
     service_name: &'static str,
 ) -> Option<tracing_appender::non_blocking::WorkerGuard> {
     let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info,edge_media_probe=debug"));
+        .unwrap_or_else(|_| EnvFilter::new("info,probe_core=debug"));
 
     // Nieblokujący writer (tracing-appender) na stdout zapobiega blokowaniu wątków roboczych Tokio:
     let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stdout());

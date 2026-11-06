@@ -1,46 +1,7 @@
-[package]
-name = "edge-media-probe"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-clap = { version = "4", features = ["derive"] }
-anyhow = "1"
-thiserror = "2"
-bytes = "1.11"
-hex = "0.4"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-tokio = { version = "1.43", features = ["full", "tracing"] }
-tokio-stream = { version = "0.1", features = ["sync", "time"] }
-futures-util = "0.3"
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
-axum = "0.8"
-sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite"] }
-socket2 = { version = "0.5", features = ["all"] }
-netdev = "0.31"
-if-addrs = "0.14"
-webrtc-srtp = "0.17"
-rtp = "0.17"
-webrtc-util = "0.17"
-pcap = "2.2"
-pnet = "0.35"
-etherparse = "0.17"
-zerocopy = { version = "0.8", features = ["derive"] }
-metrics = "0.24"
-metrics-exporter-prometheus = "0.16"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-tracing-appender = "0.2"
-console-subscriber = "0.4"
-libc = "0.2"
-
-[target.'cfg(target_os = "linux")'.dependencies]
-tokio-uring = "0.5"
-
-[dev-dependencies]
-turmoil = "0.6"
-
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tokio_unstable)'] }
-async_fn_in_trait = "allow"
+[workspace]
+members = [
+    "crates/rtp-parser",
+    "crates/probe-core",
+]
+default-members = ["crates/probe-core", "crates/rtp-parser"]
+resolver = "2"

@@ -1,5 +1,5 @@
 use bytes::{Bytes, BytesMut};
-use edge_media_probe::udp_ingress::{
+use probe_core::udp_ingress::{
     bind_tuned_udp, build_test_rtp_packet, classify_peeked_packet, parse_rtp_header, PacketClass,
 };
 use socket2::SockRef;

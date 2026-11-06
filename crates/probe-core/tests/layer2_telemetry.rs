@@ -1,4 +1,4 @@
-use edge_media_probe::layer2_telemetry::{
+use probe_core::layer2_telemetry::{
     decode_udp_payloads_from_pcap, emit_telemetry_frame_in_place, parse_telemetry_frame_zero_copy,
     ProbeTelemetryHeader,
 };

@@ -686,44 +686,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
-name = "edge-media-probe"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum 0.8.9",
- "bytes",
- "clap",
- "console-subscriber",
- "etherparse",
- "futures-util",
- "hex",
- "if-addrs",
- "libc",
- "metrics",
- "metrics-exporter-prometheus",
- "netdev",
- "pcap",
- "pnet",
- "reqwest",
- "rtp",
- "serde",
- "serde_json",
- "socket2 0.5.10",
- "sqlx",
- "thiserror 2.0.21",
- "tokio",
- "tokio-stream",
- "tokio-uring",
- "tracing",
- "tracing-appender",
- "tracing-subscriber",
- "turmoil",
- "webrtc-srtp",
- "webrtc-util",
- "zerocopy",
-]
-
-[[package]]
 name = "either"
 version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2084,6 +2046,45 @@ dependencies = [
 ]
 
 [[package]]
+name = "probe-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum 0.8.9",
+ "bytes",
+ "clap",
+ "console-subscriber",
+ "etherparse",
+ "futures-util",
+ "hex",
+ "if-addrs",
+ "libc",
+ "metrics",
+ "metrics-exporter-prometheus",
+ "netdev",
+ "pcap",
+ "pnet",
+ "reqwest",
+ "rtp",
+ "rtp-parser",
+ "serde",
+ "serde_json",
+ "socket2 0.5.10",
+ "sqlx",
+ "thiserror 2.0.21",
+ "tokio",
+ "tokio-stream",
+ "tokio-uring",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+ "turmoil",
+ "webrtc-srtp",
+ "webrtc-util",
+ "zerocopy",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2480,6 +2481,16 @@ dependencies = [
  "rand 0.9.5",
  "serde",
  "thiserror 1.0.69",
+ "webrtc-util",
+]
+
+[[package]]
+name = "rtp-parser"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "rtp",
+ "thiserror 2.0.21",
  "webrtc-util",
 ]
 

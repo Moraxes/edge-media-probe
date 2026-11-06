@@ -1,4 +1,4 @@
-use edge_media_probe::rtp_session::{ProtocolOutput, SansIoRtpSession};
+use probe_core::rtp_session::{ProtocolOutput, SansIoRtpSession};
 use std::time::{Duration, Instant};
 
 #[test]

@@ -1,5 +1,5 @@
 use axum::{routing::get, Json, Router};
-use edge_media_probe::kms_client::{KmsClient, KmsKeyResponse, SrtpKeyMaterial};
+use probe_core::kms_client::{KmsClient, KmsKeyResponse, SrtpKeyMaterial};
 
 async fn spawn_mock_kms() -> String {
     let app = Router::new().route(

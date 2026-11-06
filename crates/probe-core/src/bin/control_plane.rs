@@ -1,6 +1,6 @@
 use clap::Parser;
-use edge_media_probe::control_plane::{create_control_plane_router, AppState};
-use edge_media_probe::observability::{init_tracing, spawn_runtime_metrics_collector};
+use probe_core::control_plane::{create_control_plane_router, AppState};
+use probe_core::observability::{init_tracing, spawn_runtime_metrics_collector};
 use metrics_exporter_prometheus::PrometheusBuilder;
 use sqlx::SqlitePool;
 use std::net::SocketAddr;
@@ -53,10 +53,10 @@ async fn main() -> anyhow::Result<()> {
 
     let addr = args.listen;
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    println!("🚀 [Control Plane] Serwer nasłuchuje na http://{addr}");
-    println!("   • Endpoint KMS:        http://{addr}/v1/keys/:ssrc");
-    println!("   • Webhook alertów:     http://{addr}/v1/alerts");
-    println!("   • Metryki Prometheusa: http://{addr}/metrics");
+    println!("[Control Plane] Serwer nasłuchuje na http://{addr}");
+    println!("   - Endpoint KMS:        http://{addr}/v1/keys/:ssrc");
+    println!("   - Webhook alertów:     http://{addr}/v1/alerts");
+    println!("   - Metryki Prometheusa: http://{addr}/metrics");
 
     axum::serve(listener, app).await?;
     Ok(())

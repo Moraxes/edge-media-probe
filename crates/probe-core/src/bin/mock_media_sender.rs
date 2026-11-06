@@ -33,8 +33,8 @@ fn main() -> anyhow::Result<()> {
     let fps = args.fps.max(1);
     let sleep_duration = Duration::from_millis(1000 / fps);
 
-    println!("🎥 [Sender] Wysyłanie syntetycznego strumienia RTP na {target} ({fps} pps)...");
-    println!("   • Format pakietów: webrtc-rs/rtp (RFC 3550 Packet::marshal)");
+    println!("[Sender] Wysyłanie syntetycznego strumienia RTP na {target} ({fps} pps)...");
+    println!("   - Format pakietów: webrtc-rs/rtp (RFC 3550 Packet::marshal)");
 
     let mut seq: u16 = 1;
     let mut ts: u32 = 90_000;
@@ -61,7 +61,7 @@ fn main() -> anyhow::Result<()> {
             let raw_packet = rtp_packet.marshal()?;
             socket.send_to(&raw_packet, target)?;
         } else {
-            eprintln!("💥 [Sender] Celowo zgubiono pakiet seq={seq} (test NACK)!");
+            eprintln!("[Sender] Celowo zgubiono pakiet seq={seq} (test NACK)!");
         }
 
         seq = seq.wrapping_add(1);

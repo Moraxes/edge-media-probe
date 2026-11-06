@@ -1,4 +1,4 @@
-use edge_media_probe::observability::{
+use probe_core::observability::{
     init_tracing, record_rtp_gap_event, ActiveResourceGuard, ProbeDataplaneMetrics,
 };
 

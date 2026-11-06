@@ -1,4 +1,4 @@
-use edge_media_probe::orchestrator::{run_stream_orchestrator, with_retry};
+use probe_core::orchestrator::{run_stream_orchestrator, with_retry};
 use std::time::Duration;
 
 #[tokio::test]

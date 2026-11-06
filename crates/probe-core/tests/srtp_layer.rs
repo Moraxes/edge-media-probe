@@ -1,6 +1,6 @@
-use edge_media_probe::rtp_session::{ProtocolOutput, SansIoRtpSession};
-use edge_media_probe::srtp_layer::create_srtp_pair;
-use edge_media_probe::udp_ingress::{build_test_rtp_packet, parse_rtp_header};
+use probe_core::rtp_session::{ProtocolOutput, SansIoRtpSession};
+use probe_core::srtp_layer::create_srtp_pair;
+use probe_core::udp_ingress::{build_test_rtp_packet, parse_rtp_header};
 use std::time::{Duration, Instant};
 
 #[test]
