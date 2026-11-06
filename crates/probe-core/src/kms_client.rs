@@ -60,35 +60,19 @@ pub struct KmsClient {
 
 impl KmsClient {
     pub fn new(_base_url: String) -> Result<Self, reqwest::Error> {
-        // Zadanie 1.2: Skonfiguruj klienta HTTP `reqwest::Client` z użyciem `ClientBuilder`:
-        // Wymagania:
-        // 1. Włącz obsługę Rustls (`.use_rustls_tls()`), wyłącz proxy (`.no_proxy()`).
-        // 2. Ustaw timeout ogólny (np. 5 s), pool_idle_timeout (np. 90 s) oraz tcp_nodelay(true).
-        // 3. Zwróć instancję `KmsClient { client, base_url }`.
+        // Zadanie 1.2: Skonfiguruj klienta reqwest z obsługą rustls (podpowiedź: git show hint-1.2)
         todo!("Zadanie 1.2: Skonfiguruj klienta reqwest z use_rustls_tls()")
     }
 
     /// Pobiera materiał klucza SRTP dla strumienia o zadanym SSRC
     pub async fn fetch_srtp_keys(&self, _ssrc: u32) -> Result<SrtpKeyMaterial, KmsError> {
-        // Zadanie 1.2: Zaimplementuj zapytanie do serwera KMS:
-        // Wymagania:
-        // 1. Wyślij zapytanie GET pod adres `{base_url}/v1/keys/{ssrc:#010x}`.
-        // 2. Dodaj nagłówek korelacyjny "X-Correlation-ID" oraz "Accept: application/json".
-        // 3. Sprawdź czy status odpowiedzi to sukces (w przeciwnym razie zwróć `KmsError::ServerError`).
-        // 4. Zdeserializuj treść jako `KmsKeyResponse`.
-        // 5. Zdekoduj `master_key_hex` oraz `master_salt_hex` za pomocą biblioteki `hex`.
-        // 6. Zweryfikuj rozmiary (16 bajtów dla klucza, 14 bajtów dla soli) i zwróć `SrtpKeyMaterial`.
+        // Zadanie 1.2: Pobierz materiał klucza SRTP z KMS przez GET (podpowiedź: git show hint-1.2)
         todo!("Zadanie 1.2: Zaimplementuj fetch_srtp_keys z walidacją kryptograficzną")
     }
 
     /// Wysyła powiadomienie o naruszeniu SLA lub anomalii jakości strumienia
     pub async fn send_sla_alert(&self, _alert: &SlaAlertPayload) -> Result<(), KmsError> {
-        // Zadanie 1.2: Zaimplementuj wysyłanie alertu SLA:
-        // Wymagania:
-        // 1. Wyślij zapytanie POST pod adres `{base_url}/v1/alerts`.
-        // 2. Przekaż strukturę `alert` jako treść JSON.
-        // 3. Ustaw timeout na 3 sekundy.
-        // 4. Zweryfikuj kod odpowiedzi HTTP.
+        // Zadanie 1.2: Wyślij alert SLA jako JSON przez POST (podpowiedź: git show hint-1.2)
         todo!("Zadanie 1.2: Zaimplementuj send_sla_alert z wysyłaniem JSON")
     }
 }

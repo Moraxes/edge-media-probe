@@ -57,16 +57,11 @@ impl PortableUringStyleSink {
 
 impl AsyncFileSink for PortableUringStyleSink {
     async fn write_all_at(&mut self, _offset: u64, _buf: Vec<u8>) -> (io::Result<usize>, Vec<u8>) {
-        // Zadanie 1.4: Zaimplementuj asynchroniczny zapis plikowy ze zwrotem własności bufora:
-        // Wymagania:
-        // 1. Wykonaj przesunięcie offsetu w pliku: `self.file.seek(io::SeekFrom::Start(offset)).await`.
-        // 2. Zapisz zawartość: `self.file.write_all(&buf).await`.
-        // 3. Zwróć parę: (wynik_zapisu, zwrócony_bufor). Bufor `buf` musi wrócić do wywołującego niezależnie od wyniku.
+        // Zadanie 1.4: Asynchroniczny zapis plikowy ze zwrotem własności bufora (podpowiedź: git show hint-1.4)
         todo!("Zadanie 1.4: Zaimplementuj write_all_at w modelu completion-based")
     }
 
     async fn sync_data(&mut self) -> io::Result<()> {
-        // Zadanie 1.4: Zsynchronizuj dane pliku z dyskiem
         self.file.sync_data().await
     }
 }
@@ -80,16 +75,7 @@ where
     S: AsyncFileSink,
     St: Stream<Item = bytes::Bytes> + Unpin,
 {
-    // Zadanie 1.4: Zaimplementuj pętlę asynchronicznego zapisu ramek ze strumienia:
-    // Wymagania:
-    // 1. Zaalokuj jeden bufor roboczy wielokrotnego użytku: `reusable_buf = Vec::with_capacity(2048)`.
-    // 2. W pętli `while let Some(frame) = stream.next().await`:
-    //    - Wyczyść bufor `reusable_buf.clear()`,
-    //    - Zapisz 4-bajtową długość ramki (little-endian) oraz bajty ramki,
-    //    - Wywołaj `sink.write_all_at(offset, reusable_buf).await`,
-    //    - Zaktualizuj offset i przejmij z powrotem zwrócony bufor (`reusable_buf = returned_buf`),
-    //    - Unikaj jakichkolwiek nowych alokacji na stercie wewnątrz pętli.
-    // 3. Po zakończeniu strumienia wywołaj `sink.sync_data().await?` i zwróć całkowity zapisany offset.
+    // Zadanie 1.4: Pętla zapisu ramek ze strumienia z recyklingiem bufora (podpowiedź: git show hint-1.4)
     todo!("Zadanie 1.4: Zaimplementuj record_captured_stream z recyklingiem bufora")
 }
 

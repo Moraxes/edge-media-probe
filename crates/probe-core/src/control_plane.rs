@@ -28,10 +28,7 @@ pub enum ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        // Zadanie 1.3: Zaimplementuj mapowanie błędu domenowego na odpowiedź HTTP Axum:
-        // Wymagania:
-        // - Dla `ApiError::Database`: zwróć StatusCode::INTERNAL_SERVER_ERROR oraz JSON {"error": ...}
-        // - Dla `ApiError::InvalidSsrc`: zwróć StatusCode::BAD_REQUEST oraz JSON {"error": ...}
+        // Zadanie 1.3: Zaimplementuj mapowanie błędu domenowego na odpowiedź HTTP (podpowiedź: git show hint-1.3)
         todo!("Zadanie 1.3: Zaimplementuj IntoResponse dla ApiError")
     }
 }
@@ -40,12 +37,7 @@ impl IntoResponse for ApiError {
 pub async fn handle_get_kms_keys(
     Path(_ssrc_hex): Path<String>,
 ) -> Result<Json<crate::kms_client::KmsKeyResponse>, ApiError> {
-    // Zadanie 1.3: Zaimplementuj obsługę zapytania GET po materiał klucza SRTP:
-    // Wymagania:
-    // 1. Sparsuj ciąg hex SSRC (obsłuż opcjonalny prefix "0x" lub "0X") do wartości u32.
-    // 2. W razie błędu parsowania zwróć `ApiError::InvalidSsrc`.
-    // 3. Wygeneruj deterministyczny 16-bajtowy klucz AES i 14-bajtową sól (lub pobierz z repozytorium kluczy).
-    // 4. Zwróć `Json(KmsKeyResponse)`.
+    // Zadanie 1.3: Zwróć materiał klucza SRTP dla podanego SSRC (podpowiedź: git show hint-1.3)
     todo!("Zadanie 1.3: Zaimplementuj handle_get_kms_keys")
 }
 
@@ -54,20 +46,11 @@ pub async fn handle_post_sla_alert(
     State(_state): State<Arc<AppState>>,
     Json(_payload): Json<crate::kms_client::SlaAlertPayload>,
 ) -> Result<StatusCode, ApiError> {
-    // Zadanie 1.3: Zaimplementuj rejestrację alertu SLA w transakcji SQLite:
-    // Wymagania:
-    // 1. Rozpocznij asynchroniczną transakcję na bazie `state.db.begin().await?`.
-    // 2. Wstaw wpis do tabeli `probe_alerts` (ssrc, fraction_lost, reason).
-    // 3. Zatwierdź transakcję `tx.commit().await?`.
-    // 4. Zwróć kod `StatusCode::CREATED`.
+    // Zadanie 1.3: Zarejestruj alert SLA w transakcji SQLite (podpowiedź: git show hint-1.3)
     todo!("Zadanie 1.3: Zaimplementuj handle_post_sla_alert z transakcją SQLx")
 }
 
 pub fn create_control_plane_router(_state: Arc<AppState>) -> Router {
-    // Zadanie 1.3: Zbuduj router Axum:
-    // Wymagania:
-    // 1. Zarejestruj trasę GET `/v1/keys/{ssrc}` kierującą do `handle_get_kms_keys`.
-    // 2. Zarejestruj trasę POST `/v1/alerts` kierującą do `handle_post_sla_alert`.
-    // 3. Dołącz stan `state` za pomocą `.with_state(state)`.
+    // Zadanie 1.3: Skonfiguruj router tras Axum (podpowiedź: git show hint-1.3)
     todo!("Zadanie 1.3: Zaimplementuj create_control_plane_router")
 }

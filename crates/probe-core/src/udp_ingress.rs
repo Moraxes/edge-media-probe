@@ -18,13 +18,6 @@ pub use rtp_parser::{
 };
 
 pub fn bind_tuned_udp(_addr: SocketAddr, _rcv_buf_bytes: usize) -> std::io::Result<UdpSocket> {
-    // Zadanie 3.1: Skonfiguruj zoptymalizowane gniazdo UDP za pomocą biblioteki socket2:
-    // Wymagania:
-    // 1. Utwórz gniazdo dla odpowiedniej domeny (IPv4/IPv6 w zależności od adresu): `Domain::for_address(addr)`.
-    // 2. Włącz ponowne użycie adresu (`set_reuse_address(true)`).
-    // 3. Ustaw rozmiar bufora odbiorczego jądra (`set_recv_buffer_size(rcv_buf_bytes)`).
-    // 4. Przestaw gniazdo w tryb nieblokujący (`set_nonblocking(true)`).
-    // 5. Powiąż gniazdo z adresem (`bind(&addr.into())`).
-    // 6. Przekształć gniazdo w asynchroniczne `tokio::net::UdpSocket::from_std(socket.into())`.
+    // Zadanie 3.1: Skonfiguruj gniazdo UDP z socket2 i przekaż do Tokio (podpowiedź: git show hint-3.1)
     todo!("Zadanie 3.1: Zaimplementuj bind_tuned_udp z socket2")
 }
