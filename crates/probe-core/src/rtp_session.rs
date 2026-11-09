@@ -70,6 +70,9 @@ impl SansIoRtpSession {
     }
 }
 
+/// Aktualizuje jednocześnie liczniki `packets_ok` pary strumieni (audio i wideo)
+/// wewnątrz jednej tablicy przy użyciu `slice::get_disjoint_mut` (bez bloków `unsafe`).
+/// Zwraca `true`, jeśli indeksy są rozłączne i mieszczą się w granicach tablicy.
 pub fn sync_av_pair_metrics(_streams: &mut [StreamMetrics], _audio_idx: usize, _video_idx: usize) -> bool {
     // Zadanie 3.2: Bezpieczna modyfikacja dwóch strumieni z slice::get_disjoint_mut
     todo!()

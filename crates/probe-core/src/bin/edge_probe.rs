@@ -27,6 +27,10 @@ struct Args {
     /// Adres HTTP dla eksportera metryk Prometheusa
     #[arg(short, long, default_value = "0.0.0.0:3002")]
     metrics: SocketAddr,
+
+    /// Wymusza weryfikację HMAC-SHA1 i deszyfrowanie SRTP (RFC 3711) na wejściu
+    #[arg(long)]
+    srtp: bool,
 }
 
 #[tokio::main]
@@ -63,9 +67,10 @@ async fn main() -> anyhow::Result<()> {
 
     println!("[Edge Media Probe] Start węzła sieciowego:");
     println!("   - Nasłuch UDP:    {listen_addr}");
+    println!("   - Tryb SRTP:      {}", if args.srtp { "aktywny (AES-128-CM / HMAC-SHA1)" } else { "wyłączony (jawny RTP)" });
     println!("   - Metryki HTTP:   http://{metrics_addr}/metrics");
     if let Some(fwd) = forward_addr {
-        println!("   - Przekazywanie:  {fwd} (np. VLC / ffplay stream.sdp)");
+        println!("   - Przekazywanie:  {fwd} (np. VLC / ffplay stream.sdp / mock_media_receiver)");
     } else {
         println!("   - Przekazywanie:  brak (tryb czystej sondy / sniffera)");
     }
@@ -73,7 +78,12 @@ async fn main() -> anyhow::Result<()> {
     let rx_socket = bind_tuned_udp(listen_addr, 512 * 1024)?;
     let tx_socket = tokio::net::UdpSocket::bind("127.0.0.1:0").await?;
 
-    let (_, mut rx_srtp) = create_srtp_pair()?;
+    let mut rx_srtp = if args.srtp {
+        let (_, rx_ctx) = create_srtp_pair()?;
+        Some(rx_ctx)
+    } else {
+        None
+    };
     let mut rtp_session = SansIoRtpSession::new(0xCAFE_BABE, Instant::now(), Duration::from_secs(1));
 
     let dump_path = std::env::temp_dir().join("probe_emergency_dump.bin");
@@ -94,15 +104,16 @@ async fn main() -> anyhow::Result<()> {
             .unwrap_or(0.0);
         last_packet_instant = Some(now);
 
-        ring_buf = process_srtp_datagram_with_observability_and_uring(
+        let (returned_buf, cleartext_rtp) = process_srtp_datagram_with_observability_and_uring(
             &datagram,
-            &mut rx_srtp,
+            rx_srtp.as_mut(),
             &mut rtp_session,
             &mut pcap_sink,
             &mut disk_offset,
             ring_buf,
         )
         .await?;
+        ring_buf = returned_buf;
 
         // Okresowe sprawdzanie raportów RTCP Receiver Report (RR)
         rtp_session.handle_timeout(now);
@@ -117,12 +128,12 @@ async fn main() -> anyhow::Result<()> {
             }
         }
 
-        // Jeśli skonfigurowano port docelowy (np. 5006 dla VLC), przekazujemy surowy pakiet dalej:
-        if let Some(fwd) = forward_addr {
-            let _ = tx_socket.send_to(&datagram, fwd).await;
+        // Jeśli pakiet przeszedł weryfikację i skonfigurowano port docelowy, przekazujemy odszyfrowany RTP dalej:
+        if let (Some(fwd), Some(clear_pkt)) = (forward_addr, cleartext_rtp) {
+            let _ = tx_socket.send_to(&clear_pkt, fwd).await;
         }
 
-        ProbeDataplaneMetrics::on_packet("raw_udp", n, jitter_us);
+        ProbeDataplaneMetrics::on_packet("rtp", n, jitter_us);
     }
 }
 

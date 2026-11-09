@@ -54,3 +54,22 @@ pub fn create_control_plane_router(_state: Arc<AppState>) -> Router {
     // Zadanie 1.3: Skonfiguruj router tras Axum
     todo!()
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ControlProtocol {
+    Http,
+    BinaryProbe,
+    Unknown,
+}
+
+/// Klasyfikuje protokół na porcie sterującym przez podgląd pierwszych 4 bajtów (`TcpStream::peek`)
+/// bez ich konsumowania z kolejki odbiorczej jądra.
+pub async fn peek_control_protocol(
+    _stream: &tokio::net::TcpStream,
+) -> std::io::Result<ControlProtocol> {
+    // Zadanie 1.3: Podejrzyj pierwsze 4 bajty przez stream.peek(&mut prefix).await:
+    // - b"GET " lub b"POST" -> ControlProtocol::Http
+    // - b"PRBE" -> ControlProtocol::BinaryProbe
+    // - pozostałe -> ControlProtocol::Unknown
+    todo!()
+}
