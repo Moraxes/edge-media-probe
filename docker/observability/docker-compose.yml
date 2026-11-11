@@ -27,3 +27,15 @@ services:
     depends_on:
       - prometheus
 
+  dummy-server:
+    image: python:3.12-alpine
+    container_name: probe-dummy-server
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: ["python", "/app/server.py"]
+    volumes:
+      - ./dummy-server/server.py:/app/server.py:ro
+    ports:
+      - "8080:8080"
+
