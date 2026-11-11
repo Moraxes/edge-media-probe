@@ -1,4 +1,4 @@
-use probe_core::kms_client;
+use edge_probe::kms_client;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

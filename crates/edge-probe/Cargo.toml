@@ -1,5 +1,5 @@
 [package]
-name = "probe-core"
+name = "edge-probe"
 version = "0.1.0"
 edition = "2024"
 

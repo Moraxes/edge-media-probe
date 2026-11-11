@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "crates/rtp-parser",
-    "crates/probe-core",
+    "crates/edge-probe",
 ]
-default-members = ["crates/probe-core", "crates/rtp-parser"]
+default-members = ["crates/edge-probe", "crates/rtp-parser"]
 resolver = "2"

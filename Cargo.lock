@@ -709,6 +709,48 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
+name = "edge-probe"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum 0.8.9",
+ "bytes",
+ "chrono",
+ "clap",
+ "console-subscriber",
+ "etherparse",
+ "futures",
+ "futures-util",
+ "hex",
+ "if-addrs",
+ "libc",
+ "metrics",
+ "metrics-exporter-prometheus",
+ "netdev",
+ "pcap",
+ "pnet",
+ "reqwest",
+ "rtp",
+ "rtp-parser",
+ "serde",
+ "serde_json",
+ "socket2 0.5.10",
+ "sqlx",
+ "thiserror 2.0.21",
+ "tokio",
+ "tokio-stream",
+ "tokio-uring",
+ "tokio-util",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+ "turmoil",
+ "webrtc-srtp",
+ "webrtc-util",
+ "zerocopy",
+]
+
+[[package]]
 name = "either"
 version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2105,48 +2147,6 @@ version = "0.2.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85eae3c4ed2f50dcfe72643da4befc30deadb458a9b590d720cde2f2b1e97da9"
 dependencies = [
- "zerocopy",
-]
-
-[[package]]
-name = "probe-core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum 0.8.9",
- "bytes",
- "chrono",
- "clap",
- "console-subscriber",
- "etherparse",
- "futures",
- "futures-util",
- "hex",
- "if-addrs",
- "libc",
- "metrics",
- "metrics-exporter-prometheus",
- "netdev",
- "pcap",
- "pnet",
- "reqwest",
- "rtp",
- "rtp-parser",
- "serde",
- "serde_json",
- "socket2 0.5.10",
- "sqlx",
- "thiserror 2.0.21",
- "tokio",
- "tokio-stream",
- "tokio-uring",
- "tokio-util",
- "tracing",
- "tracing-appender",
- "tracing-subscriber",
- "turmoil",
- "webrtc-srtp",
- "webrtc-util",
  "zerocopy",
 ]
 
