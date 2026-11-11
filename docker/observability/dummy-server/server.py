@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 
@@ -13,13 +13,14 @@ def parse_ssrc(path: str) -> int:
 
 class DummyKmsHandler(BaseHTTPRequestHandler):
     def do_GET(self):
+        ssrc = parse_ssrc(self.path)
+        ttl_secs = 30 + (ssrc % 4) * 15
+        expires_at = (datetime.now(timezone.utc) + timedelta(seconds=ttl_secs))
         payload = {
-            "ssrc": parse_ssrc(self.path),
+            "ssrc": ssrc,
             "master_key_hex": "00112233445566778899aabbccddeeff",
             "master_salt_hex": "00112233445566778899aabbccdd",
-            "issued_at": datetime.now(timezone.utc)
-            .isoformat(timespec="seconds")
-            .replace("+00:00", "Z"),
+            "expires_at": expires_at.isoformat(timespec="seconds").replace("+00:00", "Z"),
         }
         body = json.dumps(payload).encode("utf-8")
         self.send_response(200)
