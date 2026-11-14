@@ -5,3 +5,6 @@ members = [
 ]
 default-members = ["crates/edge-probe", "crates/rtp-parser"]
 resolver = "2"
+
+[workspace.dependencies]
+rtp-parser = { path = "crates/rtp-parser" }
