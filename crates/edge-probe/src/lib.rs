@@ -4,6 +4,7 @@ pub use rtp_parser;
 
 pub mod control_client;
 pub mod control_plane;
+pub mod dataplane_metrics;
 pub mod kms_client;
 pub mod orchestrator;
 pub mod stream_pipeline;
