@@ -38,7 +38,8 @@ pub type AlertCommand = (SlaAlertPayload, oneshot::Sender<Result<(), sqlx::Error
 
 pub struct AppState {
     pub streams: Mutex<HashMap<u32, StreamInfo>>,
-    pub alerts_tx: mpsc::Sender<SlaAlertPayload>,
+    pub alerts_tx: mpsc::Sender<AlertCommand>,
+    pub stats_rx: watch::Receiver<AlertStats>,
 }
 
 pub async fn init_db(db_url: &str) -> Result<SqlitePool, sqlx::Error> {
@@ -49,21 +50,33 @@ pub async fn init_db(db_url: &str) -> Result<SqlitePool, sqlx::Error> {
     Ok(pool)
 }
 
-/// Zadanie 5a: odbieraj alerty z `rx` i zapisuj je sekwencyjnie do tabeli `probe_alerts`.
-pub fn spawn_alert_writer(db: SqlitePool, mut rx: mpsc::Receiver<SlaAlertPayload>) {
+/// Zadanie 5b: odbieraj komendy z `rx`, wykonuj `INSERT`, odsyłaj wynik przez `oneshot`
+/// i aktualizuj statystyki w `stats_tx`.
+pub fn spawn_alert_writer(
+    db: SqlitePool,
+    mut rx: mpsc::Receiver<AlertCommand>,
+    stats_tx: watch::Sender<AlertStats>,
+) {
     tokio::spawn(async move {
-        while let Some(payload) = rx.recv().await {
-            if let Err(err) = sqlx::query(
+        let mut stats = AlertStats::default();
+        while let Some((payload, reply)) = rx.recv().await {
+            let ssrc = payload.ssrc;
+            let res = sqlx::query(
                 "INSERT INTO probe_alerts (ssrc, fraction_lost, reason) VALUES (?, ?, ?)",
             )
-            .bind(payload.ssrc as i64)
+            .bind(ssrc as i64)
             .bind(payload.fraction_lost)
             .bind(&payload.reason)
             .execute(&db)
             .await
-            {
-                eprintln!("Błąd zapisu alertu: {err}");
+            .map(|_| ());
+
+            if res.is_ok() {
+                stats.total_alerts += 1;
+                stats.last_ssrc = Some(ssrc);
+                let _ = stats_tx.send(stats.clone());
             }
+            let _ = reply.send(res);
         }
     });
 }
@@ -88,24 +101,31 @@ async fn handle_post_alert(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<SlaAlertPayload>,
 ) -> Result<StatusCode, StatusCode> {
+    let (reply_tx, reply_rx) = oneshot::channel();
     state
         .alerts_tx
-        .send(payload)
+        .send((payload, reply_tx))
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    Ok(StatusCode::ACCEPTED)
+    reply_rx
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Ok(StatusCode::CREATED)
+}
+
+async fn handle_get_stats(State(state): State<Arc<AppState>>) -> Json<AlertStats> {
+    let stats = state.stats_rx.borrow().clone();
+    Json(stats)
 }
 
 pub fn create_router(state: Arc<AppState>) -> Router {
-    // GET /v1/streams - lista aktywnych strumieni
-    // POST /v1/streams - rejestracja aktywnego strumienia
-    // POST /v1/alerts - zapis alertu SLA
-    // GET /v1/stats - bieżące statystyki alertów
     Router::new()
         .route(
             "/v1/streams",
             get(handle_list_streams).post(handle_register_stream),
         )
         .route("/v1/alerts", post(handle_post_alert))
+        .route("/v1/stats", get(handle_get_stats))
         .with_state(state)
 }
