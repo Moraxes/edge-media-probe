@@ -70,6 +70,14 @@ pub async fn fetch_keys_batch(
 }
 
 /// Zadanie 6: pobierz pojedynczy klucz SRTP dla odkrytego SSRC z `GET {base_url}/v1/keys/{ssrc:#010x}`.
-pub async fn fetch_key(_base_url: &str, _ssrc: u32) -> Result<KmsKeyResponse, reqwest::Error> {
-    todo!()
+pub async fn fetch_key(base_url: &str, ssrc: u32) -> Result<KmsKeyResponse, reqwest::Error> {
+    let base_url = base_url.trim_end_matches('/');
+    let url = format!("{base_url}/v1/keys/{ssrc:#010x}");
+    Client::new()
+        .get(url)
+        .send()
+        .await?
+        .error_for_status()?
+        .json::<KmsKeyResponse>()
+        .await
 }
