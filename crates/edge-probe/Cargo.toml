@@ -15,6 +15,10 @@ path = "src/bin/edge_probe.rs"
 name = "kms"
 path = "src/bin/kms.rs"
 
+[[bin]]
+name = "udp-sim"
+path = "src/bin/udp_sim.rs"
+
 [dependencies]
 rtp-parser = { path = "../rtp-parser" }
 clap = { version = "4", features = ["derive", "env"] }

@@ -2,6 +2,7 @@
 
 pub use rtp_parser;
 
+pub mod control_client;
 pub mod control_plane;
 pub mod kms_client;
 pub mod orchestrator;

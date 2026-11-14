@@ -23,3 +23,8 @@ pub async fn fetch_keys_batch(
 ) -> Result<HashMap<u32, KmsKeyResponse>, reqwest::Error> {
     todo!()
 }
+
+/// Zadanie 6: pobierz pojedynczy klucz SRTP dla odkrytego SSRC z `GET {base_url}/v1/keys/{ssrc:#010x}`.
+pub async fn fetch_key(_base_url: &str, _ssrc: u32) -> Result<KmsKeyResponse, reqwest::Error> {
+    todo!()
+}
