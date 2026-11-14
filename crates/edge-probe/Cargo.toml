@@ -3,9 +3,17 @@ name = "edge-probe"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "edge-probe"
+path = "src/bin/edge_probe.rs"
+
+[[bin]]
+name = "kms"
+path = "src/bin/kms.rs"
+
 [dependencies]
 rtp-parser = { path = "../rtp-parser" }
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4", features = ["derive", "env"] }
 anyhow = "1"
 thiserror = "2"
 bytes = "1.11"
