@@ -2,15 +2,24 @@
 
 use axum::extract::Path;
 use axum::http::StatusCode;
-use axum::{routing::get, Router};
+use axum::{routing::get, Json, Router};
+use chrono::{Duration, Utc};
+use edge_probe::kms_client::KmsKeyResponse;
 use edge_probe::parse_ssrc;
 use tokio::net::TcpListener;
 
-async fn handle_get_key(Path(raw_ssrc): Path<String>) -> Result<String, StatusCode> {
+fn make_key(ssrc: u32) -> KmsKeyResponse {
+    KmsKeyResponse {
+        ssrc,
+        master_key_hex: "00112233445566778899aabbccddeeff".into(),
+        master_salt_hex: "00112233445566778899aabbccdd".into(),
+        expires_at: Utc::now() + Duration::seconds(30 + ((ssrc % 4) * 15) as i64),
+    }
+}
+
+async fn handle_get_key(Path(raw_ssrc): Path<String>) -> Result<Json<KmsKeyResponse>, StatusCode> {
     let ssrc = parse_ssrc(&raw_ssrc).ok_or(StatusCode::BAD_REQUEST)?;
-    Ok(format!(
-        r#"{{"ssrc":{ssrc},"master_key_hex":"00112233445566778899aabbccddeeff","master_salt_hex":"0102030405060708090a0b0c0d0e","expires_at":"2026-12-31T23:59:59Z"}}"#
-    ))
+    Ok(Json(make_key(ssrc)))
 }
 
 #[tokio::main]
