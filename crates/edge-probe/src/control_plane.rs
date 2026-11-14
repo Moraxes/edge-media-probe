@@ -4,6 +4,7 @@ use std::sync::Arc;
 //
 use axum::Router;
 use sqlx::SqlitePool;
+use tokio::sync::mpsc;
 
 pub struct StreamInfo {}
 
@@ -17,6 +18,11 @@ pub async fn init_db(db_url: &str) -> Result<SqlitePool, sqlx::Error> {
         .execute(&pool)
         .await?;
     Ok(pool)
+}
+
+/// Zadanie 5a: odbieraj alerty z `rx` i zapisuj je sekwencyjnie do tabeli `probe_alerts`.
+pub fn spawn_alert_writer(_db: SqlitePool, _rx: mpsc::Receiver<SlaAlertPayload>) {
+    todo!()
 }
 
 pub fn create_router(_state: Arc<AppState>) -> Router {
