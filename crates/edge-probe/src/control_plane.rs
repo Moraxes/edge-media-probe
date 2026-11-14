@@ -37,8 +37,8 @@ pub struct AlertStats {
 pub type AlertCommand = (SlaAlertPayload, oneshot::Sender<Result<(), sqlx::Error>>);
 
 pub struct AppState {
-    pub db: SqlitePool,
     pub streams: Mutex<HashMap<u32, StreamInfo>>,
+    pub alerts_tx: mpsc::Sender<SlaAlertPayload>,
 }
 
 pub async fn init_db(db_url: &str) -> Result<SqlitePool, sqlx::Error> {
@@ -49,14 +49,23 @@ pub async fn init_db(db_url: &str) -> Result<SqlitePool, sqlx::Error> {
     Ok(pool)
 }
 
-/// Zadanie 5.2: odbieraj komendy z `rx`, wykonuj `INSERT`, odsyłaj wynik przez `oneshot`
-/// i aktualizuj statystyki w `stats_tx`.
-pub fn spawn_alert_writer(
-    _db: SqlitePool,
-    _rx: mpsc::Receiver<AlertCommand>,
-    _stats_tx: watch::Sender<AlertStats>,
-) {
-    todo!()
+/// Zadanie 5a: odbieraj alerty z `rx` i zapisuj je sekwencyjnie do tabeli `probe_alerts`.
+pub fn spawn_alert_writer(db: SqlitePool, mut rx: mpsc::Receiver<SlaAlertPayload>) {
+    tokio::spawn(async move {
+        while let Some(payload) = rx.recv().await {
+            if let Err(err) = sqlx::query(
+                "INSERT INTO probe_alerts (ssrc, fraction_lost, reason) VALUES (?, ?, ?)",
+            )
+            .bind(payload.ssrc as i64)
+            .bind(payload.fraction_lost)
+            .bind(&payload.reason)
+            .execute(&db)
+            .await
+            {
+                eprintln!("Błąd zapisu alertu: {err}");
+            }
+        }
+    });
 }
 
 async fn handle_list_streams(State(state): State<Arc<AppState>>) -> Json<Vec<StreamInfo>> {
@@ -79,14 +88,12 @@ async fn handle_post_alert(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<SlaAlertPayload>,
 ) -> Result<StatusCode, StatusCode> {
-    sqlx::query("INSERT INTO probe_alerts (ssrc, fraction_lost, reason) VALUES (?, ?, ?)")
-        .bind(payload.ssrc as i64)
-        .bind(payload.fraction_lost)
-        .bind(&payload.reason)
-        .execute(&state.db)
+    state
+        .alerts_tx
+        .send(payload)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    Ok(StatusCode::CREATED)
+    Ok(StatusCode::ACCEPTED)
 }
 
 pub fn create_router(state: Arc<AppState>) -> Router {
