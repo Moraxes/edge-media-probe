@@ -5,3 +5,41 @@ members = [
 ]
 default-members = ["crates/edge-probe", "crates/rtp-parser"]
 resolver = "2"
+
+[workspace.dependencies]
+anyhow = "1.0.104"
+axum = "0.8.9"
+bytes = "1.12.1"
+chrono = { version = "0.4.45", features = ["serde"] }
+clap = { version = "4.6.7", features = ["derive", "env"] }
+console-subscriber = "0.5.0"
+etherparse = "0.21.0"
+futures = "0.3.34"
+hex = "0.4.3"
+if-addrs = "0.15.0"
+metrics = "0.24.6"
+metrics-exporter-prometheus = "0.18.3"
+netdev = "0.47.0"
+pcap = "2.5.0"
+pnet = "0.35.0"
+rand = "0.10.3"
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "json"] }
+rtp = "0.17.3"
+rtp-parser = { path = "crates/rtp-parser" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+socket2 = { version = "0.6.5", features = ["all"] }
+sqlx = { version = "0.9.0", features = ["runtime-tokio", "sqlite"] }
+syslog-tracing = "0.3.1"
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["full", "tracing"] }
+tokio-stream = { version = "0.1.19", features = ["sync", "time"] }
+tokio-uring = "0.5.0"
+tokio-util = { version = "0.7.20", features = ["rt"] }
+tracing = "0.1.44"
+tracing-appender = "0.2.5"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
+turmoil = "0.7.2"
+webrtc-srtp = "0.17.3"
+webrtc-util = "0.17.3"
+zerocopy = { version = "0.8.63", features = ["derive"] }
