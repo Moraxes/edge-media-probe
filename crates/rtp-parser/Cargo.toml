@@ -4,14 +4,14 @@ version = "0.1.0"
 edition = "2024"
 description = "Lekki, zero-copy parser i demultiplekser pakietów RTP/RTCP (RFC 3550, RFC 5761)"
 
-[dependencies]
-bytes = "1.11"
-thiserror = "2"
-
-[dev-dependencies]
-rtp = "0.17"
-webrtc-util = "0.17"
-
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tokio_unstable)'] }
+
+[dependencies]
+bytes.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+rtp.workspace = true
+webrtc-util.workspace = true
