@@ -22,33 +22,33 @@ use crate::kms_client::{self, KmsKeyResponse};
 /// Zadanie 3: uruchom w `TaskTracker` zadania dla kluczy z Zadania 2
 /// i przeprowadź *graceful shutdown* po otrzymaniu `Ctrl+C`.
 pub async fn supervise_keys(keys: HashMap<u32, KmsKeyResponse>) {
-    let tracker = TaskTracker::new();
-    let token = CancellationToken::new();
+  let tracker = TaskTracker::new();
+  let token = CancellationToken::new();
 
-    for (ssrc, key) in keys {
-        let tok = token.clone();
-        tracker.spawn(async move {
-            let ttl = (key.expires_at - Utc::now())
-                .to_std()
-                .unwrap_or(Duration::ZERO);
-            println!("Start nadzoru SSRC {ssrc:#010x} (TTL: {ttl:?})");
+  for (ssrc, key) in keys {
+    let tok = token.clone();
+    tracker.spawn(async move {
+      let ttl = (key.expires_at - Utc::now())
+        .to_std()
+        .unwrap_or(Duration::ZERO);
+      println!("Start nadzoru SSRC {ssrc:#010x} (TTL: {ttl:?})");
 
-            tokio::select! {
-                _ = tok.cancelled() => {
-                    sleep(Duration::from_millis(200)).await;
-                    println!("Zatrzymano nadzór SSRC {ssrc:#010x}");
-                }
-                _ = sleep(ttl) => {
-                    println!("Klucz dla SSRC {ssrc:#010x} wygasł");
-                }
-            }
-        });
-    }
+      tokio::select! {
+          _ = tok.cancelled() => {
+              sleep(Duration::from_millis(200)).await;
+              println!("Zatrzymano nadzór SSRC {ssrc:#010x}");
+          }
+          _ = sleep(ttl) => {
+              println!("Klucz dla SSRC {ssrc:#010x} wygasł");
+          }
+      }
+    });
+  }
 
-    let _ = signal::ctrl_c().await;
-    tracker.close();
-    token.cancel();
-    let _ = timeout(Duration::from_secs(5), tracker.wait()).await;
+  let _ = signal::ctrl_c().await;
+  tracker.close();
+  token.cancel();
+  let _ = timeout(Duration::from_secs(5), tracker.wait()).await;
 }
 
 /// Zadanie 6: nasłuchuj datagramów UDP na `listen_addr`, odkrywaj dynamicznie SSRC
@@ -57,10 +57,10 @@ pub async fn supervise_keys(keys: HashMap<u32, KmsKeyResponse>) {
 /// ramki przez kanały `broadcast::<Bytes>` do konsumenta `--forward`, wolnego konsumenta
 /// (`RecvError::Lagged`) i zadania TTL, a po `Ctrl+C` wykonaj *graceful shutdown*.
 pub async fn run_probe(
-    _kms_url: &str,
-    _control: &ControlClient,
-    _listen_addr: SocketAddr,
-    _forward_addr: Option<SocketAddr>,
+  _kms_url: &str,
+  _control: &ControlClient,
+  _listen_addr: SocketAddr,
+  _forward_addr: Option<SocketAddr>,
 ) -> std::io::Result<()> {
-    todo!()
+  todo!()
 }
