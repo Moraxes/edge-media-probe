@@ -4,5 +4,5 @@
 /// z obsługą `GET /v1/keys/{ssrc}` (oraz `POST /v1/keys/{ssrc}` w Z4.1).
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    todo!()
+  todo!()
 }
