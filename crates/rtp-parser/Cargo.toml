@@ -9,9 +9,9 @@ description = "Lekki, zero-copy parser i demultiplekser pakietów RTP/RTCP (RFC 
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tokio_unstable)'] }
 
 [dependencies]
-bytes = "1.12.1"
-thiserror = "2.0.21"
+bytes.workspace = true
+thiserror.workspace = true
 
 [dev-dependencies]
-rtp = "0.17.3"
-webrtc-util = "0.17.3"
+rtp.workspace = true
+webrtc-util.workspace = true
