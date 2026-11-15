@@ -7,7 +7,7 @@ use std::time::Duration;
 //
 use bytes::{Bytes, BytesMut};
 use chrono::Utc;
-use rtp_parser::{PacketClass, parse_rtp_header};
+use rtp_parser::{parse_rtp_header, PacketClass};
 use tokio::net::UdpSocket;
 use tokio::signal;
 use tokio::sync::broadcast::error::RecvError;
@@ -265,4 +265,17 @@ fn spawn_slow_consumer(
       }
     }
   });
+}
+
+/// Zadanie 12: uruchom `workers` niezależnych pętli workerów bez współdzielonego
+/// `Mutex`, każdą z własnym gniazdem `udp_ingress::bind_reuseport_udp`, lokalną
+/// areną `BytesMut::with_capacity(4096)` i własnym zestawem map per-worker.
+pub async fn run_probe_workers(
+  _kms_url: &str,
+  _control: &ControlClient,
+  _listen_addr: SocketAddr,
+  _forward_addr: Option<SocketAddr>,
+  _workers: usize,
+) -> std::io::Result<()> {
+  todo!()
 }

@@ -20,13 +20,27 @@ struct Args {
 
   #[arg(long)]
   forward: Option<SocketAddr>,
+
+  #[arg(long, default_value_t = 1)]
+  workers: usize,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
   let args = Args::parse();
   let control = ControlClient::new(&args.control_plane);
-  orchestrator::run_probe(&args.kms_url, &control, args.listen, args.forward)
+  if args.workers > 1 {
+    orchestrator::run_probe_workers(
+      &args.kms_url,
+      &control,
+      args.listen,
+      args.forward,
+      args.workers,
+    )
     .await?;
+  } else {
+    orchestrator::run_probe(&args.kms_url, &control, args.listen, args.forward)
+      .await?;
+  }
   Ok(())
 }
