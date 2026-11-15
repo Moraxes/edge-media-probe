@@ -8,9 +8,9 @@ use rtp_parser::{PacketClass, classify_peeked_packet};
 use socket2::{Domain, Protocol, Socket, Type};
 use tokio::net::UdpSocket;
 
-/// Zadanie 8: utwórz gniazdo UDP przez `socket2`, ustaw `SO_REUSEADDR`,
-/// `SO_REUSEPORT` (`#[cfg(unix)]`), `SO_RCVBUF` oraz tryb nieblokujący przed `bind()`,
-/// a następnie przekonwertuj do `tokio::net::UdpSocket`.
+/// Zadanie 8: utwórz gniazdo UDP przez `socket2`, ustaw `SO_REUSEPORT` (`#[cfg(unix)]`),
+/// `SO_RCVBUF` oraz tryb nieblokujący przed `bind()`, a następnie przekonwertuj do
+/// `tokio::net::UdpSocket`.
 pub fn bind_tuned_udp(
   _addr: SocketAddr,
   _rcv_buf_bytes: usize,
