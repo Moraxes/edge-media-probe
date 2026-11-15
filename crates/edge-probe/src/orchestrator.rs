@@ -22,7 +22,7 @@ use crate::kms_client::{self, KmsKeyResponse};
 /// Zadanie 3: uruchom w `TaskTracker` zadania dla kluczy z Zadania 2
 /// i przeprowadź *graceful shutdown* po otrzymaniu `Ctrl+C`.
 pub async fn supervise_keys(_keys: HashMap<u32, KmsKeyResponse>) {
-    todo!()
+  todo!()
 }
 
 /// Zadanie 6: nasłuchuj datagramów UDP na `listen_addr`, odkrywaj dynamicznie SSRC
@@ -31,10 +31,10 @@ pub async fn supervise_keys(_keys: HashMap<u32, KmsKeyResponse>) {
 /// ramki przez kanały `broadcast::<Bytes>` do konsumenta `--forward`, wolnego konsumenta
 /// (`RecvError::Lagged`) i zadania TTL, a po `Ctrl+C` wykonaj *graceful shutdown*.
 pub async fn run_probe(
-    _kms_url: &str,
-    _control: &ControlClient,
-    _listen_addr: SocketAddr,
-    _forward_addr: Option<SocketAddr>,
+  _kms_url: &str,
+  _control: &ControlClient,
+  _listen_addr: SocketAddr,
+  _forward_addr: Option<SocketAddr>,
 ) -> std::io::Result<()> {
-    todo!()
+  todo!()
 }
