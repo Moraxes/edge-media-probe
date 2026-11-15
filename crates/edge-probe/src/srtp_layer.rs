@@ -23,14 +23,21 @@ pub struct SrtpVerifier {
 
 impl SrtpVerifier {
     /// Zadanie 10: zdekoduj `master_key_hex` i `master_salt_hex` kratką `hex`,
-    /// a następnie utwórz `Context` z profilem `ProtectionProfile::Aes128CmHmacSha1_80`.
+    /// a następnie utwórz `Context` z profilem `ProtectionProfile::Aes128CmHmacSha1_80`
+    /// oraz ochroną przed powtórzeniami (`srtp_replay_protection(64)`, `srtcp_replay_protection(64)`).
     pub fn from_kms_key(_key: &KmsKeyResponse) -> Result<Self, SrtpLayerError> {
         todo!()
     }
 
-    /// Zadanie 10: sprawdź `expires_at > Utc::now()` i zweryfikuj pakiet przez `decrypt_rtp`
+    /// Zadanie 10: sprawdź `expires_at > Utc::now()` i zweryfikuj pakiet RTP przez `decrypt_rtp`
     /// na kopii roboczej, aby oryginalny bufor SRTP pozostał nienaruszony.
     pub fn verify_packet(&mut self, _raw_srtp: &[u8]) -> Result<(), SrtpLayerError> {
+        todo!()
+    }
+
+    /// Zadanie 10: sprawdź `expires_at > Utc::now()` i zweryfikuj pakiet RTCP przez `decrypt_rtcp`
+    /// na kopii roboczej, aby oryginalny bufor SRTCP pozostał nienaruszony.
+    pub fn verify_rtcp_packet(&mut self, _raw_srtcp: &[u8]) -> Result<(), SrtpLayerError> {
         todo!()
     }
 }
