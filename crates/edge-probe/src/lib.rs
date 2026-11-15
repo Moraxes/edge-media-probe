@@ -9,6 +9,7 @@ pub mod kms_client;
 pub mod orchestrator;
 pub mod stream_pipeline;
 pub mod telemetry;
+pub mod udp_ingress;
 
 /// Parsuje numer SSRC z formatu szesnastkowego (`0x...`) lub dziesiętnego.
 pub fn parse_ssrc(raw: &str) -> Option<u32> {
