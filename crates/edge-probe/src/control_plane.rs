@@ -50,7 +50,9 @@ pub async fn init_db(db_url: &str) -> Result<SqlitePool, sqlx::Error> {
   Ok(pool)
 }
 
-/// Zadanie 5a: odbieraj alerty z `rx` i zapisuj je sekwencyjnie do tabeli `probe_alerts`.
+/// Zadanie 5.1: odbieraj alerty z `rx` i zapisuj je sekwencyjnie do tabeli `probe_alerts`.
+/// Zadanie 5.2: rozszerz `spawn_alert_writer` o `AlertCommand` (`oneshot`), aktualizuj statystyki
+/// w `watch::Sender<AlertStats>` i dodaj endpoint `GET /v1/stats`.
 pub fn spawn_alert_writer(
   db: SqlitePool,
   mut rx: mpsc::Receiver<SlaAlertPayload>,
