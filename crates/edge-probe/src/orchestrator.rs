@@ -21,6 +21,7 @@ use crate::control_client::ControlClient;
 use crate::control_plane::{SlaAlertPayload, StreamInfo};
 use crate::kms_client::{KmsClient, KmsKeyResponse};
 use crate::rtp_session::{ProtocolOutput, SansIoRtpSession};
+use crate::srtp_layer::SrtpVerifier;
 use crate::stream_pipeline;
 use crate::udp_ingress;
 
@@ -59,6 +60,7 @@ pub async fn supervise_keys(keys: HashMap<u32, KmsKeyResponse>) {
 struct StreamEntry {
   tx: broadcast::Sender<Bytes>,
   session: SansIoRtpSession,
+  verifier: SrtpVerifier,
 }
 
 fn send_alert(
@@ -101,6 +103,22 @@ impl WorkerState {
   }
 
   async fn handle_rtcp(&mut self, frame: Bytes) {
+    if frame.len() >= 8 {
+      let ssrc = u32::from_be_bytes([frame[4], frame[5], frame[6], frame[7]]);
+      if let Some(entry) = self.streams.get_mut(&ssrc) {
+        if let Err(err) = entry
+          .verifier
+          .verify_rtcp_packet(&frame)
+        {
+          send_alert(
+            &self.cfg.alerts_tx,
+            ssrc,
+            format!("srtcp_verify_failed: {err}"),
+          );
+          return;
+        }
+      }
+    }
     let _ = self
       .cfg
       .forward_socket
@@ -141,6 +159,14 @@ impl WorkerState {
       );
     }
 
+    let verifier = match SrtpVerifier::from_kms_key(&key) {
+      Ok(v) => v,
+      Err(err) => {
+        eprintln!("Nieprawidłowy klucz SRTP dla SSRC {ssrc:#010x}: {err}");
+        return None;
+      }
+    };
+
     let (tx, _) = broadcast::channel::<Bytes>(16);
     self.streams.insert(
       ssrc,
@@ -151,6 +177,7 @@ impl WorkerState {
           Instant::now(),
           Duration::from_secs(5),
         ),
+        verifier,
       },
     );
 
@@ -192,6 +219,11 @@ impl WorkerState {
     let Some(entry) = self.ensure_stream(ssrc, peer).await else {
       return;
     };
+
+    if let Err(err) = entry.verifier.verify_packet(&frame) {
+      send_alert(&alerts_tx, ssrc, format!("srtp_verify_failed: {err}"));
+      return;
+    }
 
     entry.session.handle_rtp(
       header.version,
