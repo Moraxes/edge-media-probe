@@ -13,12 +13,14 @@ use tokio::signal;
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::{broadcast, mpsc};
 use tokio::time::{sleep, timeout};
+use tokio_stream::wrappers::BroadcastStream;
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
 //
 use crate::control_client::ControlClient;
 use crate::control_plane::{SlaAlertPayload, StreamInfo};
 use crate::kms_client::{KmsClient, KmsKeyResponse};
+use crate::stream_pipeline;
 
 /// Zadanie 3: uruchom w `TaskTracker` zadania dla kluczy z Zadania 2
 /// i przeprowadź *graceful shutdown* po otrzymaniu `Ctrl+C`.
@@ -134,6 +136,13 @@ impl WorkerState {
       ssrc,
       self.cfg.forward_socket.clone(),
       self.cfg.forward_addr,
+    );
+    spawn_sla_analyzer(
+      &self.tracker,
+      &self.cfg.token,
+      &self.cfg.alerts_tx,
+      &tx,
+      ssrc,
     );
 
     if self.streams.len() == 1 {
@@ -342,6 +351,21 @@ fn spawn_forward_consumer(
         }
       }
     }
+  });
+}
+
+fn spawn_sla_analyzer(
+  tracker: &TaskTracker,
+  token: &CancellationToken,
+  alerts_tx: &mpsc::Sender<SlaAlertPayload>,
+  tx: &broadcast::Sender<Bytes>,
+  ssrc: u32,
+) {
+  let rx = BroadcastStream::new(tx.subscribe());
+  let alerts_tx = alerts_tx.clone();
+  let tok = token.clone();
+  tracker.spawn(async move {
+    stream_pipeline::run_sla_analyzer(ssrc, rx, alerts_tx, tok).await;
   });
 }
 
