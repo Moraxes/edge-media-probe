@@ -1,4 +1,5 @@
 //! Serwer KMS (Key Management Service) dla kluczy SRTP.
+//! Zadanie 4.1: dodaj stan `RwLock` oraz obsługę `POST /v1/keys/{ssrc}` w serwerze `kms`.
 
 use axum::extract::Path;
 use axum::http::StatusCode;
