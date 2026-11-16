@@ -5,9 +5,9 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 //
-use bytes::Bytes;
+use bytes::{Bytes, BytesMut};
 use chrono::Utc;
-use rtp_parser::parse_rtp_header;
+use rtp_parser::{PacketClass, parse_rtp_header};
 use tokio::net::UdpSocket;
 use tokio::signal;
 use tokio::sync::broadcast::error::RecvError;
@@ -21,6 +21,7 @@ use crate::control_client::ControlClient;
 use crate::control_plane::{SlaAlertPayload, StreamInfo};
 use crate::kms_client::{KmsClient, KmsKeyResponse};
 use crate::stream_pipeline;
+use crate::udp_ingress;
 
 /// Zadanie 3: uruchom w `TaskTracker` zadania dla kluczy z Zadania 2
 /// i przeprowadź *graceful shutdown* po otrzymaniu `Ctrl+C`.
@@ -72,7 +73,7 @@ struct WorkerState {
   cfg: WorkerConfig,
   tracker: TaskTracker,
   streams: HashMap<u32, StreamEntry>,
-  buf: Vec<u8>,
+  pool: BytesMut,
 }
 
 impl WorkerState {
@@ -81,8 +82,16 @@ impl WorkerState {
       cfg,
       tracker: TaskTracker::new(),
       streams: HashMap::new(),
-      buf: vec![0u8; 2048],
+      pool: BytesMut::with_capacity(4096),
     }
+  }
+
+  async fn handle_rtcp(&mut self, frame: Bytes) {
+    let _ = self
+      .cfg
+      .forward_socket
+      .send_to(&frame, self.cfg.forward_addr)
+      .await;
   }
 
   async fn ensure_stream(
@@ -203,10 +212,13 @@ async fn run_worker_loop(
   loop {
     tokio::select! {
       _ = token.cancelled() => break,
-      recv_res = socket.recv_from(&mut state.buf) => {
-        let (n, peer) = recv_res?;
-        let frame = Bytes::copy_from_slice(&state.buf[..n]);
-        state.handle_rtp(frame, peer).await;
+      recv_res = udp_ingress::recv_rtp_or_rtcp(&socket, &mut state.pool) => {
+        let (class, frame, peer) = recv_res?;
+        match class {
+          Some(PacketClass::Rtcp) => state.handle_rtcp(frame).await,
+          Some(PacketClass::Rtp) => state.handle_rtp(frame, peer).await,
+          None => {}
+        }
       }
     }
   }
@@ -268,7 +280,7 @@ pub async fn run_probe(
   listen_addr: SocketAddr,
   forward_addr: SocketAddr,
 ) -> std::io::Result<()> {
-  let socket = UdpSocket::bind(listen_addr).await?;
+  let socket = udp_ingress::bind_tuned_udp(listen_addr, 262_144)?;
   println!("edge-probe: nasłuchuję datagramów RTP na {listen_addr}");
   serve_sockets(vec![socket], kms, control, forward_addr).await
 }
