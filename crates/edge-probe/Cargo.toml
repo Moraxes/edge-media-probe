@@ -56,6 +56,9 @@ zerocopy.workspace = true
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tokio_unstable)'] }
 async_fn_in_trait = "allow"
+unused_variables = "allow"
+dead_code = "allow"
+unused_imports = "allow"
 
 [dev-dependencies]
 turmoil.workspace = true

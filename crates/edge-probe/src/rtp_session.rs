@@ -50,13 +50,13 @@ impl SansIoRtpSession {
 
     /// Zadanie 9: obsłuż przychodzący nagłówek RTP (warunek wersji i SSRC,
     /// `wrapping_sub`, aktualizacja `roc`, wykrywanie luk oraz emisja `SendRtcpNack` i `ForwardRtp`).
-    pub fn handle_rtp(&mut self, _version: u8, _ssrc: u32, _seq: u16, _payload_len: usize) {
+    pub fn handle_rtp(&mut self, version: u8, ssrc: u32, seq: u16, payload_len: usize) {
         todo!()
     }
 
     /// Zadanie 9: po przekroczeniu `next_rr_deadline` przesuń termin o `rr_interval`
     /// i wyemituj `ProtocolOutput::SendRtcpReceiverReport`.
-    pub fn handle_timeout(&mut self, _now: Instant) {
+    pub fn handle_timeout(&mut self, now: Instant) {
         todo!()
     }
 

@@ -11,28 +11,57 @@ pub struct ControlClient {
 }
 
 impl ControlClient {
-  pub fn new(_base_url: &str) -> Self {
-    todo!()
+  pub fn new(base_url: &str) -> Self {
+    Self {
+      client: Client::new(),
+      base_url: base_url
+        .trim_end_matches('/')
+        .to_string(),
+    }
   }
 
   /// Zadanie 6: zarejestruj strumień przez `POST {base_url}/v1/streams`.
   pub async fn register_stream(
     &self,
-    _stream: &StreamInfo,
+    stream: &StreamInfo,
   ) -> Result<(), reqwest::Error> {
-    todo!()
+    let url = format!("{}/v1/streams", self.base_url);
+    self
+      .client
+      .post(url)
+      .json(stream)
+      .send()
+      .await?
+      .error_for_status()?;
+    Ok(())
   }
 
   /// Zadanie 6: pobierz listę zarejestrowanych strumieni z `GET {base_url}/v1/streams`.
   pub async fn fetch_streams(&self) -> Result<Vec<StreamInfo>, reqwest::Error> {
-    todo!()
+    let url = format!("{}/v1/streams", self.base_url);
+    self
+      .client
+      .get(url)
+      .send()
+      .await?
+      .error_for_status()?
+      .json()
+      .await
   }
 
   /// Zadanie 6: wyślij alert SLA przez `POST {base_url}/v1/alerts`.
   pub async fn send_alert(
     &self,
-    _alert: &SlaAlertPayload,
+    alert: &SlaAlertPayload,
   ) -> Result<(), reqwest::Error> {
-    todo!()
+    let url = format!("{}/v1/alerts", self.base_url);
+    self
+      .client
+      .post(url)
+      .json(alert)
+      .send()
+      .await?
+      .error_for_status()?;
+    Ok(())
   }
 }

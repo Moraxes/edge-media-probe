@@ -1,36 +1,73 @@
-//! Klient KMS (Key Management Service) dla węzła `edge_probe`.
+//! Klient HTTP dla usługi KMS (Key Management Service) ze współdzieloną pulą połączeń.
 
+use std::collections::HashMap;
+//
 use chrono::{DateTime, Utc};
 use reqwest::Client;
-use serde::Deserialize;
-use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
+use tokio::task::JoinSet;
 
-/// Zadanie 2: zdefiniuj pola struktury na podstawie odpowiedzi serwera KMS (`curl`).
-#[derive(Debug, Deserialize)]
+/// Odpowiedź KMS z materiałem klucza SRTP dla danego SSRC.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KmsKeyResponse {
-  // Dodaj pola odpowiadające JSON-owi z GET /v1/keys/{ssrc}
+  pub ssrc: u32,
+  pub master_key_hex: String,
+  pub master_salt_hex: String,
+  pub expires_at: DateTime<Utc>,
 }
 
-/// Zadanie 1: pobierz równolegle klucze jako surowy tekst JSON dla podanych SSRC.
-pub async fn fetch_keys_raw(
-  _base_url: &str,
-  _ssrcs: Vec<u32>,
-) -> Result<(), reqwest::Error> {
-  todo!()
+#[derive(Debug, Clone)]
+pub struct KmsClient {
+  client: Client,
+  base_url: String,
 }
 
-/// Zadanie 2: pobierz i zdeserializuj odpowiedzi KMS do `HashMap<u32, KmsKeyResponse>`.
-pub async fn fetch_keys_batch(
-  _base_url: &str,
-  _ssrcs: Vec<u32>,
-) -> Result<HashMap<u32, KmsKeyResponse>, reqwest::Error> {
-  todo!()
-}
+impl KmsClient {
+  pub fn new(base_url: &str) -> Self {
+    Self {
+      client: Client::new(),
+      base_url: base_url
+        .trim_end_matches('/')
+        .to_string(),
+    }
+  }
 
-/// Zadanie 6: pobierz pojedynczy klucz SRTP dla odkrytego SSRC z `GET {base_url}/v1/keys/{ssrc:#010x}`.
-pub async fn fetch_key(
-  _base_url: &str,
-  _ssrc: u32,
-) -> Result<KmsKeyResponse, reqwest::Error> {
-  todo!()
+  /// Pobierz pojedynczy klucz SRTP dla odkrytego SSRC z `GET {base_url}/v1/keys/{ssrc:#010x}`.
+  pub async fn fetch_key(
+    &self,
+    ssrc: u32,
+  ) -> Result<KmsKeyResponse, reqwest::Error> {
+    let url = format!("{}/v1/keys/{ssrc:#010x}", self.base_url);
+    self
+      .client
+      .get(url)
+      .send()
+      .await?
+      .error_for_status()?
+      .json::<KmsKeyResponse>()
+      .await
+  }
+
+  /// Pobierz równolegle i zdeserializuj klucze KMS dla podanych SSRC.
+  pub async fn fetch_keys_batch(
+    &self,
+    ssrcs: Vec<u32>,
+  ) -> Result<HashMap<u32, KmsKeyResponse>, reqwest::Error> {
+    let mut set = JoinSet::new();
+    for ssrc in ssrcs {
+      let client = self.clone();
+      set.spawn(async move {
+        let key = client.fetch_key(ssrc).await?;
+        Ok::<_, reqwest::Error>((ssrc, key))
+      });
+    }
+    let mut keys = HashMap::new();
+    while let Some(res) = set.join_next().await {
+      if let Ok(item) = res {
+        let (ssrc, key) = item?;
+        keys.insert(ssrc, key);
+      }
+    }
+    Ok(keys)
+  }
 }

@@ -16,10 +16,10 @@ use crate::control_plane::SlaAlertPayload;
 /// z `rtp_parser::parse_rtp_header`, `scan`, `chunks_timeout`) i publikuj wykryte luki
 /// sekwencyjne jako `SlaAlertPayload` do kanału `alerts_tx`.
 pub async fn run_sla_analyzer<S>(
-  _ssrc: u32,
-  _frames: S,
-  _alerts_tx: mpsc::Sender<SlaAlertPayload>,
-  _shutdown: CancellationToken,
+  ssrc: u32,
+  frames: S,
+  alerts_tx: mpsc::Sender<SlaAlertPayload>,
+  shutdown: CancellationToken,
 ) where
   S: Stream<Item = Result<Bytes, BroadcastStreamRecvError>> + Unpin,
 {

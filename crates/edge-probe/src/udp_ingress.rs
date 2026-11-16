@@ -4,7 +4,7 @@ use std::io;
 use std::net::SocketAddr;
 //
 use bytes::{Bytes, BytesMut};
-use rtp_parser::{classify_peeked_packet, PacketClass};
+use rtp_parser::{PacketClass, classify_peeked_packet};
 use socket2::{Domain, Protocol, Socket, Type};
 use tokio::net::UdpSocket;
 
@@ -12,8 +12,8 @@ use tokio::net::UdpSocket;
 /// nieblokujący przed `bind()`, a następnie przekonwertuj do
 /// `tokio::net::UdpSocket`.
 pub fn bind_tuned_udp(
-  _addr: SocketAddr,
-  _rcv_buf_bytes: usize,
+  addr: SocketAddr,
+  rcv_buf_bytes: usize,
 ) -> io::Result<UdpSocket> {
   todo!()
 }
@@ -22,8 +22,8 @@ pub fn bind_tuned_udp(
 /// `SO_RCVBUF` oraz trybem nieblokującym przed `bind()`, aby wiele workerów
 /// mogło odbierać datagramy równolegle na tym samym porcie.
 pub fn bind_reuseport_udp(
-  _addr: SocketAddr,
-  _rcv_buf_bytes: usize,
+  addr: SocketAddr,
+  rcv_buf_bytes: usize,
 ) -> io::Result<UdpSocket> {
   todo!()
 }
@@ -32,8 +32,8 @@ pub fn bind_reuseport_udp(
 /// podejrzyj pierwsze 2 bajty przez `socket.peek_from(&mut [0u8; 2]).await`, sklasyfikuj
 /// datagram (`classify_peeked_packet`), odbierz go przez `recv_buf_from` i wydziel `Bytes`.
 pub async fn recv_rtp_or_rtcp(
-  _socket: &UdpSocket,
-  _pool: &mut BytesMut,
+  socket: &UdpSocket,
+  pool: &mut BytesMut,
 ) -> io::Result<(Option<PacketClass>, Bytes, SocketAddr)> {
   todo!()
 }

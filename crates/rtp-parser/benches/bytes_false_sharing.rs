@@ -2,7 +2,7 @@ use std::hint::black_box;
 use std::thread;
 
 use bytes::{BufMut, Bytes, BytesMut};
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 
 #[cfg(target_arch = "aarch64")]
 const CACHE_LINE: usize = 128;
