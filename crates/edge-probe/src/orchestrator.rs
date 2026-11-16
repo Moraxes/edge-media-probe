@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 //
 use bytes::{Bytes, BytesMut};
 use chrono::Utc;
@@ -20,6 +20,7 @@ use tokio_util::task::TaskTracker;
 use crate::control_client::ControlClient;
 use crate::control_plane::{SlaAlertPayload, StreamInfo};
 use crate::kms_client::{KmsClient, KmsKeyResponse};
+use crate::rtp_session::{ProtocolOutput, SansIoRtpSession};
 use crate::stream_pipeline;
 use crate::udp_ingress;
 
@@ -57,6 +58,19 @@ pub async fn supervise_keys(keys: HashMap<u32, KmsKeyResponse>) {
 
 struct StreamEntry {
   tx: broadcast::Sender<Bytes>,
+  session: SansIoRtpSession,
+}
+
+fn send_alert(
+  alerts_tx: &mpsc::Sender<SlaAlertPayload>,
+  ssrc: u32,
+  reason: String,
+) {
+  let _ = alerts_tx.try_send(SlaAlertPayload {
+    ssrc,
+    fraction_lost: 0.0,
+    reason,
+  });
 }
 
 #[derive(Clone)]
@@ -128,9 +142,17 @@ impl WorkerState {
     }
 
     let (tx, _) = broadcast::channel::<Bytes>(16);
-    self
-      .streams
-      .insert(ssrc, StreamEntry { tx: tx.clone() });
+    self.streams.insert(
+      ssrc,
+      StreamEntry {
+        tx: tx.clone(),
+        session: SansIoRtpSession::new(
+          ssrc,
+          Instant::now(),
+          Duration::from_secs(5),
+        ),
+      },
+    );
 
     spawn_ttl_task(
       &self.tracker,
@@ -162,15 +184,35 @@ impl WorkerState {
   }
 
   async fn handle_rtp(&mut self, frame: Bytes, peer: SocketAddr) {
-    let Ok((header, _)) = parse_rtp_header(frame.clone()) else {
+    let Ok((header, payload)) = parse_rtp_header(frame.clone()) else {
       return;
     };
-    let Some(entry) = self
-      .ensure_stream(header.ssrc, peer)
-      .await
-    else {
+    let ssrc = header.ssrc;
+    let alerts_tx = self.cfg.alerts_tx.clone();
+    let Some(entry) = self.ensure_stream(ssrc, peer).await else {
       return;
     };
+
+    entry.session.handle_rtp(
+      header.version,
+      ssrc,
+      header.sequence_number,
+      payload.len(),
+    );
+    while let Some(output) = entry.session.poll_output() {
+      if let ProtocolOutput::SendRtcpNack {
+        media_ssrc,
+        missing_seqs,
+      } = output
+      {
+        send_alert(
+          &alerts_tx,
+          media_ssrc,
+          format!("rtp_gap_nack: {} missing", missing_seqs.len()),
+        );
+      }
+    }
+
     let _ = entry.tx.send(frame);
   }
 }
