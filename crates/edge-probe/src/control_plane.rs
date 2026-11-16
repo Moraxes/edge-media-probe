@@ -50,6 +50,7 @@ pub async fn init_db(db_url: &str) -> Result<SqlitePool, sqlx::Error> {
   Ok(pool)
 }
 
+/// Zadanie 5.1: odbieraj alerty z `rx` i zapisuj je sekwencyjnie do tabeli `probe_alerts`.
 /// Zadanie 5.2: odbieraj komendy z `rx`, wykonuj `INSERT`, odsyłaj wynik przez `oneshot`
 /// i aktualizuj statystyki w `stats_tx`.
 pub fn spawn_alert_writer(
