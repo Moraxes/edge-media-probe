@@ -369,7 +369,14 @@ pub async fn run_probe_workers(
   forward_addr: SocketAddr,
   workers: usize,
 ) -> std::io::Result<()> {
-  todo!()
+  let count = workers.max(1);
+  let sockets = (0..count)
+    .map(|_| udp_ingress::bind_reuseport_udp(listen_addr, 262_144))
+    .collect::<std::io::Result<Vec<_>>>()?;
+  println!(
+    "edge-probe: nasłuchuję datagramów RTP na {listen_addr} ({count} workerów SO_REUSEPORT)"
+  );
+  serve_sockets(sockets, kms, control, forward_addr).await
 }
 
 fn spawn_ttl_task(
