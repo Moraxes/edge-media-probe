@@ -16,6 +16,10 @@ name = "kms"
 path = "src/bin/kms.rs"
 
 [[bin]]
+name = "l2-dump"
+path = "src/bin/l2_dump.rs"
+
+[[bin]]
 name = "udp-sim"
 path = "src/bin/udp_sim.rs"
 
@@ -33,6 +37,10 @@ if-addrs.workspace = true
 metrics.workspace = true
 metrics-exporter-prometheus.workspace = true
 netdev.workspace = true
+netwatcher = { version = "0.8.0", features = ["tokio"] }
+nex-core = "0.28.1"
+nex-datalink = { version = "0.28.1", features = ["async"] }
+nex-packet = "0.28.1"
 pcap.workspace = true
 pnet.workspace = true
 rand.workspace = true
