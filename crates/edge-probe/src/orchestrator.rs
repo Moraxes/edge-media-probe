@@ -16,6 +16,7 @@ use tokio::time::{sleep, timeout};
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
+use tracing::{Instrument, info_span, instrument};
 //
 use crate::control_client::ControlClient;
 use crate::control_plane::{SlaAlertPayload, StreamInfo};
@@ -126,6 +127,7 @@ impl WorkerState {
       .await;
   }
 
+  #[instrument(skip_all, fields(ssrc = format_args!("{ssrc:#010x}")))]
   async fn ensure_stream(
     &mut self,
     ssrc: u32,
@@ -210,6 +212,7 @@ impl WorkerState {
     self.streams.get_mut(&ssrc)
   }
 
+  #[instrument(skip_all, fields(len = frame.len()))]
   async fn handle_rtp(&mut self, frame: Bytes, peer: SocketAddr) {
     let Ok((header, payload)) = parse_rtp_header(frame.clone()) else {
       return;
@@ -326,11 +329,14 @@ async fn serve_sockets(
 
   for (worker_id, socket) in sockets.into_iter().enumerate() {
     let cfg = base_cfg.clone();
-    tracker.spawn(async move {
-      if let Err(err) = run_worker_loop(socket, cfg).await {
-        eprintln!("Błąd workera {worker_id}: {err}");
+    tracker.spawn(
+      async move {
+        if let Err(err) = run_worker_loop(socket, cfg).await {
+          eprintln!("Błąd workera {worker_id}: {err}");
+        }
       }
-    });
+      .instrument(info_span!("worker_loop", worker_id)),
+    );
   }
   drop(base_cfg);
 
