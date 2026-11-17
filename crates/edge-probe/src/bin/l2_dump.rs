@@ -38,12 +38,32 @@ enum Command {
 
 /// Zadanie 13: zbuduj syntetyczną ramkę Ethernet II + IPv4 + UDP przez `PacketBuilder`.
 fn build_udp_frame(payload: &[u8]) -> anyhow::Result<Vec<u8>> {
-  todo!()
+  let builder =
+    PacketBuilder::ethernet2([1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12])
+      .ipv4([10, 0, 0, 1], [10, 0, 0, 2], 64)
+      .udp(5004, 5006);
+  let mut frame = Vec::with_capacity(builder.size(payload.len()));
+  builder.write(&mut frame, payload)?;
+  Ok(frame)
 }
 
 /// Zadanie 13: zapisz surową ramkę Ethernet II do pliku `.pcap` przez `Capture::dead`.
 fn write_dead_pcap(path: &Path, frame: &[u8]) -> anyhow::Result<()> {
-  todo!()
+  let dead = Capture::dead(Linktype::ETHERNET)?;
+  let mut save = dead.savefile(path)?;
+  let header = pcap::PacketHeader {
+    ts: libc::timeval {
+      tv_sec: 0,
+      tv_usec: 0,
+    },
+    caplen: frame.len() as u32,
+    len: frame.len() as u32,
+  };
+  save.write(&pcap::Packet {
+    header: &header,
+    data: frame,
+  });
+  Ok(())
 }
 
 /// Zadanie 13: zdekoduj ładunki UDP z uchwytu `Capture<Activated>` dla `ETHERNET` oraz `LINUX_SLL`.
@@ -51,12 +71,31 @@ fn decode_udp_payloads<T: Activated>(
   cap: &mut Capture<T>,
   linktype: Linktype,
 ) -> anyhow::Result<Vec<(u16, u16, Vec<u8>)>> {
-  todo!()
+  let mut out = Vec::new();
+  while let Ok(pkt) = cap.next_packet() {
+    let sliced = match linktype {
+      Linktype::ETHERNET => SlicedPacket::from_ethernet(pkt.data)?,
+      Linktype::LINUX_SLL => SlicedPacket::from_linux_sll(pkt.data)?,
+      other => anyhow::bail!("nieobsługiwany linktype: {other:?}"),
+    };
+    if let Some(TransportSlice::Udp(udp)) = sliced.transport {
+      out.push((
+        udp.source_port(),
+        udp.destination_port(),
+        udp.payload().to_vec(),
+      ));
+    }
+  }
+  Ok(out)
 }
 
 /// Zadanie 13: otwórz aktywny uchwyt na interfejsie i wyślij ramkę przez `sendpacket`.
 fn inject_frame(iface: &str, frame: &[u8]) -> anyhow::Result<()> {
-  todo!()
+  let mut active = Capture::from_device(iface)?
+    .immediate_mode(true)
+    .open()?;
+  active.sendpacket(frame)?;
+  Ok(())
 }
 
 fn main() -> anyhow::Result<()> {
