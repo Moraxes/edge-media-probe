@@ -16,6 +16,10 @@ name = "kms"
 path = "src/bin/kms.rs"
 
 [[bin]]
+name = "l2-dump"
+path = "src/bin/l2_dump.rs"
+
+[[bin]]
 name = "udp-sim"
 path = "src/bin/udp_sim.rs"
 
@@ -30,6 +34,7 @@ etherparse.workspace = true
 futures.workspace = true
 hex.workspace = true
 if-addrs.workspace = true
+libc = "0.2.191"
 metrics.workspace = true
 metrics-exporter-prometheus.workspace = true
 netdev.workspace = true
