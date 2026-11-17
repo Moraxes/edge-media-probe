@@ -7,6 +7,8 @@ pub mod control_plane;
 pub mod dataplane_metrics;
 pub mod kms_client;
 pub mod orchestrator;
+pub mod rtp_session;
+pub mod srtp_layer;
 pub mod stream_pipeline;
 pub mod telemetry;
 pub mod udp_ingress;
