@@ -115,8 +115,32 @@ fn find_interface(name: &str) -> anyhow::Result<Interface> {
 
 /// Zadanie 13: zbuduj syntetyczną ramkę Ethernet II + IPv4 + UDP przez `nex-packet`.
 fn build_udp_frame(payload: &[u8]) -> anyhow::Result<Vec<u8>> {
-  let _ = payload;
-  todo!()
+  let src_ip = std::net::Ipv4Addr::new(10, 0, 0, 1);
+  let dst_ip = std::net::Ipv4Addr::new(10, 0, 0, 2);
+
+  let udp = UdpPacketBuilder::new(src_ip.into(), dst_ip.into())
+    .source(5004)
+    .destination(5006)
+    .payload(Bytes::copy_from_slice(payload))
+    .calculate_checksum()
+    .build()?;
+
+  let ipv4 = Ipv4PacketBuilder::new()
+    .source(src_ip)
+    .destination(dst_ip)
+    .ttl(64)
+    .protocol(IpNextProtocol::Udp)
+    .payload(udp.to_bytes())
+    .build()?;
+
+  let eth = EthernetPacketBuilder::new()
+    .source(MacAddr::new(1, 2, 3, 4, 5, 6))
+    .destination(MacAddr::new(7, 8, 9, 10, 11, 12))
+    .ethertype(EtherType::Ipv4)
+    .payload(ipv4.to_bytes())
+    .build();
+
+  Ok(eth.to_bytes().to_vec())
 }
 
 /// Zadanie 13: zdekoduj ładunki UDP ze strumienia `AsyncRawReceiver` przez `FrameSlice`.
@@ -124,8 +148,30 @@ async fn decode_udp_payloads(
   rx: &mut dyn AsyncRawReceiver,
   limit: usize,
 ) -> anyhow::Result<Vec<(u16, u16, Vec<u8>)>> {
-  let _ = (rx, limit);
-  todo!()
+  let mut out = Vec::new();
+  while out.len() < limit {
+    let Some(item) = rx.next().await else {
+      break;
+    };
+    let raw = item?;
+    let Ok(sliced) = FrameSlice::try_from_buf(&raw, ParseOption::default())
+    else {
+      continue;
+    };
+    if sliced.ip_protocol != Some(IpNextProtocol::Udp) {
+      continue;
+    }
+    let Some(transport) = sliced.transport else {
+      continue;
+    };
+    if transport.len() < 4 {
+      continue;
+    }
+    let src = u16::from_be_bytes([transport[0], transport[1]]);
+    let dst = u16::from_be_bytes([transport[2], transport[3]]);
+    out.push((src, dst, sliced.payload.to_vec()));
+  }
+  Ok(out)
 }
 
 /// Zadanie 13: wyślij surową ramkę asynchronicznie przez `AsyncRawSender::poll_send`.
@@ -133,8 +179,8 @@ async fn inject_frame(
   tx: &mut dyn AsyncRawSender,
   frame: &[u8],
 ) -> anyhow::Result<()> {
-  let _ = (tx, frame);
-  todo!()
+  poll_fn(|cx| tx.poll_send(cx, frame)).await?;
+  Ok(())
 }
 
 #[cfg(test)]
