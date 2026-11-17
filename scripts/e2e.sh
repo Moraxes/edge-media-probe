@@ -42,10 +42,15 @@ curl -fsS "${CONTROL_URL}/v1/stats" >/dev/null
 
 curl -fsS -X POST "${KMS_URL}/v1/keys/0x1000" >/dev/null
 
+DIAG="${DIAG:-none}"
+TRACE_FILE="${TRACE_FILE:-$REPO_DIR/edge-probe-trace.json}"
+
 "$REPO_DIR/target/debug/edge-probe" \
     --listen "127.0.0.1:${PROBE_PORT}" \
     --forward "127.0.0.1:${FORWARD_PORT}" \
-    --workers "$WORKERS" &
+    --workers "$WORKERS" \
+    --diag "$DIAG" \
+    --trace-file "$TRACE_FILE" &
 PIDS+=($!)
 
 sleep 0.5
