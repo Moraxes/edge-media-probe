@@ -8,9 +8,12 @@ use tracing_chrome::{ChromeLayerBuilder, FlushGuard};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-#[derive(Clone, Copy, Debug, ValueEnum)]
-enum TraceBackend {
-  Perfetto,
+#[derive(Clone, Copy, Debug, Default, ValueEnum)]
+enum DiagMode {
+  #[default]
+  None,
+  Console,
+  Chrome,
   Tracy,
 }
 
@@ -35,11 +38,8 @@ struct Args {
   #[arg(long, default_value_t = 1)]
   workers: usize,
 
-  #[arg(long, env = "EDGE_PROBE_TRACE", value_enum)]
-  trace: Option<TraceBackend>,
-
-  #[arg(long, env = "EDGE_PROBE_CONSOLE", default_value_t = false)]
-  console: bool,
+  #[arg(long, env = "EDGE_PROBE_DIAG", value_enum, default_value_t = DiagMode::None)]
+  diag: DiagMode,
 
   #[arg(
     long,
@@ -49,36 +49,26 @@ struct Args {
   trace_file: String,
 }
 
-fn init_tracing(
-  trace: Option<TraceBackend>,
-  console: bool,
-  trace_file: &str,
-) -> Option<FlushGuard> {
-  let console_layer = console.then(console_subscriber::spawn);
-  match trace {
-    Some(TraceBackend::Perfetto) => {
+fn init_diag(mode: DiagMode, trace_file: &str) -> Option<FlushGuard> {
+  match mode {
+    DiagMode::None => None,
+    DiagMode::Console => {
+      console_subscriber::init();
+      None
+    }
+    DiagMode::Chrome => {
       let (chrome_layer, guard) = ChromeLayerBuilder::new()
         .file(trace_file)
         .build();
       tracing_subscriber::registry()
-        .with(console_layer)
         .with(chrome_layer)
         .init();
       Some(guard)
     }
-    Some(TraceBackend::Tracy) => {
+    DiagMode::Tracy => {
       tracing_subscriber::registry()
-        .with(console_layer)
         .with(tracing_tracy::TracyLayer::default())
         .init();
-      None
-    }
-    None => {
-      if let Some(layer) = console_layer {
-        tracing_subscriber::registry()
-          .with(layer)
-          .init();
-      }
       None
     }
   }
@@ -87,7 +77,7 @@ fn init_tracing(
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
   let args = Args::parse();
-  let _trace_guard = init_tracing(args.trace, args.console, &args.trace_file);
+  let _diag_guard = init_diag(args.diag, &args.trace_file);
   let kms = KmsClient::new(&args.kms_url);
   let control = ControlClient::new(&args.control_plane);
   if args.workers > 1 {
