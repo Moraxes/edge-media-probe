@@ -26,7 +26,7 @@ cargo build --bins -p edge-probe
 
 cd "$TMPDIR"
 
-"$REPO_DIR/target/debug/kms" > "$TMPDIR/kms.log" 2>&1 &
+KMS_KEY_TTL_SECS="${KMS_KEY_TTL_SECS:-3600}" "$REPO_DIR/target/debug/kms" > "$TMPDIR/kms.log" 2>&1 &
 PIDS+=($!)
 
 "$REPO_DIR/target/debug/control-plane" > "$TMPDIR/cp.log" 2>&1 &

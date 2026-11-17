@@ -57,7 +57,9 @@ tokio-stream.workspace = true
 tokio-util.workspace = true
 tracing.workspace = true
 tracing-appender.workspace = true
+tracing-chrome = "0.7.2"
 tracing-subscriber.workspace = true
+tracing-tracy = "0.12.0"
 webrtc-srtp.workspace = true
 zerocopy.workspace = true
 

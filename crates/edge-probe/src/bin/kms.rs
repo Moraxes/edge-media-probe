@@ -21,11 +21,15 @@ fn make_key(ssrc: u32) -> KmsKeyResponse {
   let mut salt = [0u8; 14];
   rand::fill(&mut key);
   rand::fill(&mut salt);
+  let ttl_secs = std::env::var("KMS_KEY_TTL_SECS")
+    .ok()
+    .and_then(|v| v.parse::<i64>().ok())
+    .unwrap_or_else(|| 30 + ((ssrc % 4) * 15) as i64);
   KmsKeyResponse {
     ssrc,
     master_key_hex: hex::encode(key),
     master_salt_hex: hex::encode(salt),
-    expires_at: Utc::now() + Duration::seconds(30 + ((ssrc % 4) * 15) as i64),
+    expires_at: Utc::now() + Duration::seconds(ttl_secs),
   }
 }
 
