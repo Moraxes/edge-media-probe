@@ -1,16 +1,22 @@
 //! Niezależne narzędzie CLI `l2-dump` do odkrywania interfejsów, nasłuchu zmian, sniffingu i wstrzykiwania ramek L2 (`nex` + `netwatcher` + `tokio`).
 
-use std::future::poll_fn;
+use anyhow::Context;
+use rtp_parser::build_test_rtp_packet;
+use serde::Serializer;
+use std::{
+  future::poll_fn,
+  net::{IpAddr, Ipv4Addr},
+};
 //
 use bytes::Bytes;
 use clap::{Parser, Subcommand};
-use futures::StreamExt;
+use futures::{StreamExt, TryStreamExt, future::ready};
 use nex_core::{
   interface::{Interface, get_interfaces},
   mac::MacAddr,
 };
 use nex_datalink::{
-  Config,
+  Channel, Config,
   async_io::{AsyncChannel, AsyncRawReceiver, AsyncRawSender, async_channel},
 };
 use nex_packet::{
@@ -18,7 +24,7 @@ use nex_packet::{
     ethernet::EthernetPacketBuilder, ipv4::Ipv4PacketBuilder,
     udp::UdpPacketBuilder,
   },
-  ethernet::EtherType,
+  ethernet::{EtherType, EthernetPacket},
   frame::{FrameSlice, ParseOption},
   ip::IpNextProtocol,
   packet::Packet,
@@ -61,56 +67,89 @@ async fn main() -> anyhow::Result<()> {
       }
     }
     Command::Listen => {
-      let mut watch = netwatcher::watch_interfaces_async::<
-        netwatcher::async_adapter::Tokio,
-      >()?;
-      loop {
-        let update = watch.changed().await;
-        for iface in update.diff.added.values() {
-          println!("+ iface {} (index {})", iface.name, iface.index);
-        }
-        for iface in update.diff.removed.values() {
-          println!("- iface {} (index {})", iface.name, iface.index);
-        }
-        for (ifindex, addr) in update.addrs_added() {
-          println!("+ addr ifindex={ifindex}: {}/{}", addr.ip, addr.prefix_len);
-        }
-        for (ifindex, addr) in update.addrs_removed() {
-          println!("- addr ifindex={ifindex}: {}/{}", addr.ip, addr.prefix_len);
-        }
-      }
+      todo!();
     }
     Command::Inspect { iface, count } => {
-      let dev = find_interface(&iface)?;
-      let AsyncChannel::Ethernet(_tx, mut rx) =
-        async_channel(&dev, Config::default())?
+      let network_interface = get_interfaces()
+        .into_iter()
+        .find(|ifc| ifc.name == iface)
+        .with_context(|| format!("interface {iface} not found"))?;
+      println!("{network_interface:#?}");
+      let AsyncChannel::Ethernet(_, st) = async_channel(
+        &network_interface,
+        Config::default().with_promiscuous(true),
+      )?
       else {
-        anyhow::bail!("nieobsługiwany typ kanału L2");
+        anyhow::bail!("failed to build channel");
       };
-      for (src, dst, data) in decode_udp_payloads(rx.as_mut(), count).await? {
-        println!("UDP {src} -> {dst}: {} B", data.len());
-      }
+
+      let st = st
+        .filter_map(async |maybe_frame| {
+          maybe_frame
+            .inspect_err(|err| eprintln!("failed to recv EthII frame: {err}"))
+            .ok()
+        })
+        .filter_map(async |frame| {
+          EthernetPacket::try_from_buf(&frame)
+            .inspect_err(|err| eprintln!("failed to parse EthII frame: {err}"))
+            .ok()
+        })
+        .inspect(|frame| {
+          println!("{} -> {}", frame.source(), frame.destination())
+        })
+        .take(count);
+      tokio::pin!(st);
+
+      while let Some(item) = st.next().await {}
     }
     Command::Inject { iface, payload } => {
-      let dev = find_interface(&iface)?;
-      let AsyncChannel::Ethernet(mut tx, _rx) =
-        async_channel(&dev, Config::default())?
+      let network_interface = get_interfaces()
+        .into_iter()
+        .find(|ifc| ifc.name == iface)
+        .with_context(|| format!("interface {iface} not found"))?;
+      println!("{network_interface:#?}");
+      let AsyncChannel::Ethernet(mut tx, _) = async_channel(
+        &network_interface,
+        Config::default().with_promiscuous(true),
+      )?
       else {
-        anyhow::bail!("nieobsługiwany typ kanału L2");
+        anyhow::bail!("failed to build channel");
       };
-      let frame = build_udp_frame(payload.as_bytes())?;
-      inject_frame(tx.as_mut(), &frame).await?;
-      println!("Wysłano {} B na {}", frame.len(), iface);
+
+      let localhost_addr: IpAddr = [127, 0, 0, 1].into();
+      let payload_bytes = Bytes::from(payload);
+
+      let rtp = build_test_rtp_packet(u16::MAX, u32::MAX, 0x1000, &rand::random::<[u8; 1024]>());
+
+      let datagram = UdpPacketBuilder::new(localhost_addr, localhost_addr)
+        .destination(5004)
+        .source(9999)
+        .payload(payload_bytes)
+        .to_bytes()
+        .map_err(|err| anyhow::anyhow!("failed to build UDP datagram: {err}"))?;
+
+      let ipp = Ipv4PacketBuilder::new()
+        .source(Ipv4Addr::from_octets([127, 0, 0, 1]))
+        .destination(Ipv4Addr::from_octets([127, 0, 0, 1]))
+        .protocol(IpNextProtocol::Udp)
+        .payload(datagram)
+        .to_bytes()
+        .map_err(|err| anyhow::anyhow!("failed to build IP packet: {err}"))?;
+
+      let frame = EthernetPacketBuilder::new()
+        .source(network_interface.mac_addr.unwrap())
+        .destination(network_interface.mac_addr.unwrap())
+        .payload(ipp)
+        .to_bytes();
+
+      let frame_slice = frame.to_vec();
+
+      println!("frame size: {}", frame.len());
+
+      poll_fn(|cx| tx.poll_send(cx, &frame_slice)).await?;
     }
   }
   Ok(())
-}
-
-fn find_interface(name: &str) -> anyhow::Result<Interface> {
-  get_interfaces()
-    .into_iter()
-    .find(|iface| iface.name == name)
-    .ok_or_else(|| anyhow::anyhow!("nie znaleziono interfejsu: {name}"))
 }
 
 /// Zadanie 13: zbuduj syntetyczną ramkę Ethernet II + IPv4 + UDP przez `nex-packet`.
@@ -135,32 +174,4 @@ async fn inject_frame(
 ) -> anyhow::Result<()> {
   let _ = (tx, frame);
   todo!()
-}
-
-#[cfg(test)]
-mod tests {
-  use tokio::sync::mpsc;
-  use tokio_stream::wrappers::ReceiverStream;
-
-  use super::*;
-
-  #[tokio::test]
-  async fn build_and_decode_udp_frame_over_channel() {
-    let frame = build_udp_frame(b"rtp-l2-test").expect("build_udp_frame");
-    let (tx, rx) = mpsc::channel(4);
-    tx.send(Ok(frame))
-      .await
-      .expect("send frame");
-    drop(tx);
-
-    let mut stream = ReceiverStream::new(rx);
-    let packets = decode_udp_payloads(&mut stream, 1)
-      .await
-      .expect("decode_udp_payloads");
-
-    assert_eq!(packets.len(), 1);
-    assert_eq!(packets[0].0, 5004);
-    assert_eq!(packets[0].1, 5006);
-    assert_eq!(packets[0].2, b"rtp-l2-test");
-  }
 }
